@@ -9,9 +9,10 @@ src/
   lib/            pure logic, no DOM access. Every module has a *.test.ts next to it.
     types.ts      Service, ServiceStatus, Impact, Incident, IncidentUpdate
     time.ts       UTC day helpers: utcDayKey, startOfUtcDay, addUtcDays, durationMs, DAY_MS
-    status.ts     worstStatus, overallStatus, STATUS_LABEL, UPDATE_LABEL
+    status.ts     worstStatus, overallStatus, STATUS_LABEL, DAY_TONE_LABEL, UPDATE_LABEL
     incidents.ts  incidentState, pastIncidents, upcomingMaintenance, activeIncidents, groupByDay
-    format.ts     day, time, range and duration formatting (always UTC)
+    format.ts     day, time, range, duration and uptime formatting (always UTC)
+    uptime.ts     serviceDays (one tone per UTC day) and serviceUptime (percentage) per service
     fixtures.test.ts  consistency checks on the JSON fixtures
   data/           JSON fixtures and their typed exports (index.ts)
     services.json   the six services and their current status

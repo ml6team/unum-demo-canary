@@ -1,6 +1,12 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentDuration,
+  formatRange,
+  formatUptime,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
@@ -10,8 +16,9 @@ import {
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
-import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
+import { DAY_TONE_LABEL, overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
+import { type DayTone, serviceDays, serviceUptime, type UptimeDay } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -81,6 +88,32 @@ function renderOverall(): void {
   );
 }
 
+function uptimeBar(day: UptimeDay): HTMLLIElement {
+  const text = `${formatDay(day.day)}: ${DAY_TONE_LABEL[day.tone]}`;
+  const attrs: Record<string, string> = {
+    class: `uptime-bar tone-${day.tone}`,
+    title: text,
+    'data-tip': text,
+  };
+  if (day.incidentIds.length > 0) attrs.tabindex = '0';
+  return el('li', attrs, [el('span', { class: 'visually-hidden' }, [text])]);
+}
+
+function uptimeBlock(service: Service): HTMLElement {
+  const uptime = serviceUptime(service.id, incidents, NOW);
+  return el('div', { class: 'uptime' }, [
+    el(
+      'ol',
+      { class: 'uptime-bars', 'aria-label': `${service.name}: last 90 days, oldest first` },
+      serviceDays(service.id, incidents, NOW).map(uptimeBar),
+    ),
+    el('p', { class: 'uptime-summary' }, [
+      el('span', { class: 'uptime-percent' }, [`${formatUptime(uptime.percent)} uptime`]),
+      el('span', { class: 'uptime-caption' }, ['90 days']),
+    ]),
+  ]);
+}
+
 function serviceRow(service: Service): HTMLLIElement {
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-text' }, [
@@ -91,6 +124,32 @@ function serviceRow(service: Service): HTMLLIElement {
       icon(service.status),
       STATUS_LABEL[service.status],
     ]),
+    uptimeBlock(service),
+  ]);
+}
+
+const LEGEND_TONES: DayTone[] = [
+  'operational',
+  'degraded',
+  'partial-outage',
+  'major-outage',
+  'maintenance',
+];
+
+function uptimeLegend(): HTMLElement {
+  return el('div', { class: 'uptime-legend' }, [
+    el('span', { class: 'muted' }, ['90 days ago']),
+    el(
+      'ul',
+      { class: 'uptime-legend-items', 'aria-label': 'Bar colours' },
+      LEGEND_TONES.map((tone) =>
+        el('li', { class: `uptime-legend-item tone-${tone}` }, [
+          el('span', { class: 'uptime-swatch', 'aria-hidden': 'true' }),
+          DAY_TONE_LABEL[tone],
+        ]),
+      ),
+    ),
+    el('span', { class: 'muted' }, ['Today']),
   ]);
 }
 
@@ -213,6 +272,7 @@ renderOverall();
 renderActive();
 renderMaintenance();
 byId('services').replaceChildren(...services.map(serviceRow));
+byId('services').after(uptimeLegend());
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),

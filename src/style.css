@@ -340,6 +340,7 @@ a {
 
 .service {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -351,6 +352,7 @@ a {
 }
 
 .service-text {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -373,6 +375,119 @@ a {
   font-size: 14px;
   font-weight: 550;
   white-space: nowrap;
+}
+
+/* Uptime bars */
+
+.uptime {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.uptime-bars {
+  display: flex;
+  flex: 1 1 270px;
+  gap: 1px;
+  height: 28px;
+}
+
+.uptime-bar {
+  position: relative;
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--tone-solid);
+}
+
+.uptime-bar:focus-visible {
+  z-index: 2;
+}
+
+.uptime-bar::after {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+  color: var(--text);
+  content: attr(data-tip);
+  font-size: 12px;
+  line-height: 18px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.uptime-bar:nth-child(-n + 15)::after {
+  left: 0;
+  transform: none;
+}
+
+.uptime-bar:nth-last-child(-n + 15)::after {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.uptime-bar:hover::after,
+.uptime-bar:focus-visible::after {
+  display: block;
+}
+
+.uptime-summary {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.uptime-percent {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.uptime-caption {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.uptime-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.uptime-legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.uptime-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.uptime-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--tone-solid);
 }
 
 /* Badges */
@@ -651,7 +766,8 @@ a {
   }
 
   .card-head,
-  .service {
+  .service,
+  .uptime-legend {
     padding-right: 16px;
     padding-left: 16px;
   }
