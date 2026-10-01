@@ -4,6 +4,7 @@ import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from '
 import {
   activeIncidents,
   affectedServiceNames,
+  filterByServices,
   groupByDay,
   incidentState,
   pastIncidents,
@@ -150,9 +151,12 @@ function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
   return details;
 }
 
-function renderActive(): void {
-  const active = activeIncidents(incidents, NOW);
-  if (active.length === 0) return;
+function renderActive(list: Incident[]): void {
+  const active = activeIncidents(list, NOW);
+  if (active.length === 0) {
+    byId('active').replaceChildren();
+    return;
+  }
   byId('active').replaceChildren(
     el('section', { class: 'notice', 'aria-labelledby': 'active-heading' }, [
       el('h2', { id: 'active-heading', class: 'notice-heading' }, ['Active incidents']),
@@ -161,9 +165,12 @@ function renderActive(): void {
   );
 }
 
-function renderMaintenance(): void {
-  const upcoming = upcomingMaintenance(incidents, NOW);
-  if (upcoming.length === 0) return;
+function renderMaintenance(list: Incident[]): void {
+  const upcoming = upcomingMaintenance(list, NOW);
+  if (upcoming.length === 0) {
+    byId('maintenance').replaceChildren();
+    return;
+  }
   byId('maintenance').replaceChildren(
     el('section', { class: 'notice', 'aria-labelledby': 'maintenance-heading' }, [
       el('h2', { id: 'maintenance-heading', class: 'notice-heading' }, ['Scheduled maintenance']),
@@ -185,12 +192,13 @@ function renderMaintenance(): void {
   );
 }
 
-function renderHistory(): void {
-  const groups = groupByDay(pastIncidents(incidents, NOW));
+function renderHistory(list: Incident[], filtered: boolean): void {
+  const groups = groupByDay(pastIncidents(list, NOW));
   if (groups.length === 0) {
-    byId('days').replaceChildren(
-      el('p', { class: 'empty' }, ['No incidents reported in the last 90 days.']),
-    );
+    const text = filtered
+      ? 'No past incidents in the last 90 days affect the selected services.'
+      : 'No incidents reported in the last 90 days.';
+    byId('days').replaceChildren(el('p', { class: 'empty' }, [text]));
     return;
   }
   byId('days').replaceChildren(
@@ -209,12 +217,49 @@ function renderHistory(): void {
   );
 }
 
+function selectedServiceIds(): string[] {
+  return [
+    ...byId('filter').querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked'),
+  ].map((box) => box.value);
+}
+
+function renderIncidents(): void {
+  const selected = selectedServiceIds();
+  const list = filterByServices(incidents, selected);
+  renderActive(list);
+  renderMaintenance(list);
+  renderHistory(list, selected.length > 0);
+}
+
+function renderFilter(): void {
+  const clear = el('button', { type: 'button', class: 'filter-clear' }, ['Clear']);
+  const fieldset = el('fieldset', { class: 'filter' }, [
+    el('legend', { class: 'filter-legend' }, ['Filter incidents']),
+    el(
+      'div',
+      { class: 'filter-options' },
+      services.map((service) => {
+        const box = el('input', { type: 'checkbox', value: service.id });
+        return el('label', { class: 'filter-option' }, [box, service.name]);
+      }),
+    ),
+    clear,
+  ]);
+  fieldset.addEventListener('change', renderIncidents);
+  clear.addEventListener('click', () => {
+    for (const box of fieldset.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')) {
+      box.checked = false;
+    }
+    renderIncidents();
+  });
+  byId('filter').replaceChildren(fieldset);
+}
+
 renderOverall();
-renderActive();
-renderMaintenance();
+renderFilter();
 byId('services').replaceChildren(...services.map(serviceRow));
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
 );
-renderHistory();
+renderIncidents();
