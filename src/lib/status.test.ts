@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { compareSeverity, overallStatus, STATUS_LABEL, UPDATE_LABEL, worstStatus } from './status';
+import {
+  compareSeverity,
+  DAY_TONE_LABEL,
+  overallStatus,
+  STATUS_LABEL,
+  UPDATE_LABEL,
+  worstStatus,
+} from './status';
 import type { Service, ServiceStatus } from './types';
+import type { DayTone } from './uptime';
 
 function service(id: string, status: ServiceStatus): Service {
   return { id, name: id, description: '', status };
@@ -67,5 +75,25 @@ describe('UPDATE_LABEL', () => {
   it('labels incident and maintenance updates', () => {
     expect(UPDATE_LABEL.investigating).toBe('Investigating');
     expect(UPDATE_LABEL['in-progress']).toBe('In progress');
+  });
+});
+
+describe('DAY_TONE_LABEL', () => {
+  const tones: DayTone[] = [
+    'operational',
+    'degraded',
+    'partial-outage',
+    'major-outage',
+    'maintenance',
+  ];
+
+  it('AC5: has a distinct label for every day tone', () => {
+    for (const tone of tones) expect(DAY_TONE_LABEL[tone]).toBeTruthy();
+    expect(new Set(tones.map((t) => DAY_TONE_LABEL[t])).size).toBe(5);
+  });
+
+  it('AC5: labels a day without incidents as no incident', () => {
+    expect(DAY_TONE_LABEL.operational).toBe('No incident');
+    expect(DAY_TONE_LABEL.maintenance).toBe('Maintenance');
   });
 });
