@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Flagpole</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="./">
+          <svg class="brand-mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <rect x="4" y="2" width="2" height="20" rx="1" fill="currentColor" />
+            <path d="M7 3h11.5a.5.5 0 0 1 .4.8L16.5 7.5l2.4 3.7a.5.5 0 0 1-.4.8H7z" fill="var(--accent)" />
+          </svg>
+          <span>Flagpole</span>
+        </a>
+        <span class="env-badge">production</span>
+        <span class="topbar-meta" id="window-label"></span>
+      </div>
+    </header>
+    <main class="page">
+      <div class="page-head">
+        <h1>Feature flags</h1>
+        <p class="summary" id="summary"></p>
+      </div>
+      <div class="layout">
+        <section class="card" aria-labelledby="flags-heading">
+          <h2 id="flags-heading" class="visually-hidden">All flags</h2>
+          <table class="flag-table">
+            <thead>
+              <tr>
+                <th scope="col">Flag</th>
+                <th scope="col" class="col-owner">Owner</th>
+                <th scope="col" class="col-rate">Error rate</th>
+                <th scope="col" class="col-switch">Enabled</th>
+              </tr>
+            </thead>
+            <tbody id="flag-rows"></tbody>
+          </table>
+        </section>
+        <aside class="card details" id="details" aria-live="polite" aria-label="Flag details"></aside>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
