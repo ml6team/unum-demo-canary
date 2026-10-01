@@ -364,6 +364,11 @@ a {
   font-size: 13px;
 }
 
+.service-uptime {
+  margin-top: 2px;
+  font-size: 13px;
+}
+
 .status {
   display: inline-flex;
   flex: none;
