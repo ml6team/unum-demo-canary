@@ -1,0 +1,486 @@
+[
+  {
+    "id": "inc-2026-07-06-push-processing",
+    "kind": "incident",
+    "title": "Delayed processing of git pushes",
+    "impact": "degraded",
+    "affectedServiceIds": ["git"],
+    "startedAt": "2026-07-06T15:20:00Z",
+    "resolvedAt": "2026-07-06T16:02:00Z",
+    "updates": [
+      {
+        "at": "2026-07-06T15:20:00Z",
+        "status": "investigating",
+        "body": "Pushes are accepted but can take several minutes to appear in the web app. We are investigating."
+      },
+      {
+        "at": "2026-07-06T15:41:00Z",
+        "status": "identified",
+        "body": "A backlog in the post-receive queue is delaying processing. We have added workers to drain it."
+      },
+      {
+        "at": "2026-07-06T16:02:00Z",
+        "status": "resolved",
+        "body": "The queue has drained and pushes are processed normally."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-07-09-email-delays",
+    "kind": "incident",
+    "title": "Email notifications delayed",
+    "impact": "degraded",
+    "affectedServiceIds": ["notifications"],
+    "startedAt": "2026-07-09T07:40:00Z",
+    "resolvedAt": "2026-07-09T09:10:00Z",
+    "updates": [
+      {
+        "at": "2026-07-09T07:40:00Z",
+        "status": "investigating",
+        "body": "Some email notifications are arriving up to 30 minutes late."
+      },
+      {
+        "at": "2026-07-09T08:15:00Z",
+        "status": "identified",
+        "body": "Our email provider is throttling outbound mail from one of our sending pools. We are moving traffic to a second pool."
+      },
+      {
+        "at": "2026-07-09T08:50:00Z",
+        "status": "monitoring",
+        "body": "Traffic has moved and new emails are delivered without delay. Queued emails are being sent."
+      },
+      {
+        "at": "2026-07-09T09:10:00Z",
+        "status": "resolved",
+        "body": "All queued emails have been delivered."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-07-14-api-latency",
+    "kind": "incident",
+    "title": "Elevated API latency",
+    "impact": "degraded",
+    "affectedServiceIds": ["api"],
+    "startedAt": "2026-07-14T10:30:00Z",
+    "resolvedAt": "2026-07-14T10:52:00Z",
+    "updates": [
+      {
+        "at": "2026-07-14T10:30:00Z",
+        "status": "investigating",
+        "body": "API response times are higher than usual. Requests are succeeding."
+      },
+      {
+        "at": "2026-07-14T10:52:00Z",
+        "status": "resolved",
+        "body": "A misbehaving cache node was removed from rotation and latency is back to normal."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-07-18-webhook-delays",
+    "kind": "incident",
+    "title": "Webhook deliveries delayed",
+    "impact": "degraded",
+    "affectedServiceIds": ["webhooks"],
+    "startedAt": "2026-07-18T12:00:00Z",
+    "resolvedAt": "2026-07-18T12:25:00Z",
+    "updates": [
+      {
+        "at": "2026-07-18T12:00:00Z",
+        "status": "investigating",
+        "body": "Webhook deliveries are delayed by up to 10 minutes."
+      },
+      {
+        "at": "2026-07-18T12:25:00Z",
+        "status": "resolved",
+        "body": "Delivery workers have caught up. No events were lost."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-07-22-dashboard-slow",
+    "kind": "incident",
+    "title": "Dashboard slow to load",
+    "impact": "degraded",
+    "affectedServiceIds": ["web"],
+    "startedAt": "2026-07-22T08:05:00Z",
+    "resolvedAt": "2026-07-22T08:50:00Z",
+    "updates": [
+      {
+        "at": "2026-07-22T08:05:00Z",
+        "status": "investigating",
+        "body": "Pages in the web app are loading slowly for some users in Europe."
+      },
+      {
+        "at": "2026-07-22T08:30:00Z",
+        "status": "identified",
+        "body": "A CDN edge location is serving assets slowly. We have routed traffic around it."
+      },
+      {
+        "at": "2026-07-22T08:50:00Z",
+        "status": "resolved",
+        "body": "Page load times are back to normal."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-07-30-ssh-pushes",
+    "kind": "incident",
+    "title": "Some pushes over SSH rejected",
+    "impact": "partial-outage",
+    "affectedServiceIds": ["git"],
+    "startedAt": "2026-07-30T15:00:00Z",
+    "resolvedAt": "2026-07-30T15:35:00Z",
+    "updates": [
+      {
+        "at": "2026-07-30T15:00:00Z",
+        "status": "investigating",
+        "body": "A portion of git pushes over SSH are failing with a connection reset. HTTPS is unaffected."
+      },
+      {
+        "at": "2026-07-30T15:18:00Z",
+        "status": "identified",
+        "body": "A configuration change to our SSH load balancers caused the failures. We are rolling it back."
+      },
+      {
+        "at": "2026-07-30T15:35:00Z",
+        "status": "resolved",
+        "body": "The rollback is complete and pushes over SSH are succeeding."
+      }
+    ]
+  },
+  {
+    "id": "mnt-2026-08-08-git-database",
+    "kind": "maintenance",
+    "title": "Database maintenance for Git operations",
+    "impact": "partial-outage",
+    "affectedServiceIds": ["git", "api"],
+    "startedAt": "2026-08-08T02:00:00Z",
+    "resolvedAt": "2026-08-08T03:30:00Z",
+    "updates": [
+      {
+        "at": "2026-08-01T09:00:00Z",
+        "status": "scheduled",
+        "body": "We will upgrade the repository metadata database. Pushes and write API calls will be unavailable for up to 90 minutes. Clones and fetches will keep working."
+      },
+      {
+        "at": "2026-08-08T02:00:00Z",
+        "status": "in-progress",
+        "body": "Maintenance has started. Repositories are read-only."
+      },
+      {
+        "at": "2026-08-08T03:30:00Z",
+        "status": "completed",
+        "body": "Maintenance is complete and repositories accept pushes again."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-08-13-search-timeouts",
+    "kind": "incident",
+    "title": "Search queries timing out",
+    "impact": "degraded",
+    "affectedServiceIds": ["search"],
+    "startedAt": "2026-08-13T17:10:00Z",
+    "resolvedAt": "2026-08-13T17:40:00Z",
+    "updates": [
+      {
+        "at": "2026-08-13T17:10:00Z",
+        "status": "investigating",
+        "body": "Some code searches across large organizations are timing out."
+      },
+      {
+        "at": "2026-08-13T17:40:00Z",
+        "status": "resolved",
+        "body": "We added capacity to the search cluster and queries complete normally."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-08-19-webhooks-outage",
+    "kind": "incident",
+    "title": "Webhook deliveries failing",
+    "impact": "major-outage",
+    "affectedServiceIds": ["webhooks"],
+    "startedAt": "2026-08-19T13:02:00Z",
+    "resolvedAt": "2026-08-19T16:08:00Z",
+    "updates": [
+      {
+        "at": "2026-08-19T13:02:00Z",
+        "status": "investigating",
+        "body": "Webhook deliveries are failing for all customers. We are investigating."
+      },
+      {
+        "at": "2026-08-19T13:40:00Z",
+        "status": "identified",
+        "body": "The message broker that queues webhook events ran out of disk space after a retention setting was changed. We are restoring capacity."
+      },
+      {
+        "at": "2026-08-19T15:05:00Z",
+        "status": "monitoring",
+        "body": "The broker is healthy again and deliveries have resumed. Events from the outage are being redelivered in order."
+      },
+      {
+        "at": "2026-08-19T16:08:00Z",
+        "status": "resolved",
+        "body": "All delayed events have been delivered. You can find each redelivery in your webhook's recent deliveries. We will publish a full incident review."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-08-27-api-errors",
+    "kind": "incident",
+    "title": "Increased error rates on the API and web app",
+    "impact": "partial-outage",
+    "affectedServiceIds": ["api", "web"],
+    "startedAt": "2026-08-27T18:15:00Z",
+    "resolvedAt": "2026-08-27T18:40:00Z",
+    "updates": [
+      {
+        "at": "2026-08-27T18:15:00Z",
+        "status": "investigating",
+        "body": "About 8% of API and web requests are returning server errors."
+      },
+      {
+        "at": "2026-08-27T18:28:00Z",
+        "status": "identified",
+        "body": "A deploy introduced a connection pool leak. We are rolling it back."
+      },
+      {
+        "at": "2026-08-27T18:40:00Z",
+        "status": "resolved",
+        "body": "The rollback is complete and error rates are back to normal."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-08-search-indexing-delay",
+    "kind": "incident",
+    "title": "Search results missing recent changes",
+    "impact": "degraded",
+    "affectedServiceIds": ["search"],
+    "startedAt": "2026-09-08T14:05:00Z",
+    "resolvedAt": "2026-09-08T15:20:00Z",
+    "updates": [
+      {
+        "at": "2026-09-08T14:05:00Z",
+        "status": "investigating",
+        "body": "Code pushed in the last hour is not showing up in search results."
+      },
+      {
+        "at": "2026-09-08T14:40:00Z",
+        "status": "identified",
+        "body": "The indexing pipeline is behind after a spike in large pushes. We have scaled up indexers."
+      },
+      {
+        "at": "2026-09-08T15:20:00Z",
+        "status": "resolved",
+        "body": "Indexing has caught up and search results are current."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-09-search-unavailable",
+    "kind": "incident",
+    "title": "Search unavailable for some organizations",
+    "impact": "partial-outage",
+    "affectedServiceIds": ["search"],
+    "startedAt": "2026-09-09T09:12:00Z",
+    "resolvedAt": "2026-09-09T11:47:00Z",
+    "updates": [
+      {
+        "at": "2026-09-09T09:12:00Z",
+        "status": "investigating",
+        "body": "Search is returning errors for some organizations."
+      },
+      {
+        "at": "2026-09-09T09:55:00Z",
+        "status": "identified",
+        "body": "Two shards of the search cluster are unhealthy after yesterday's scale-up. We are rebuilding them from replicas."
+      },
+      {
+        "at": "2026-09-09T11:10:00Z",
+        "status": "monitoring",
+        "body": "Both shards are rebuilt and serving traffic. We are watching error rates."
+      },
+      {
+        "at": "2026-09-09T11:47:00Z",
+        "status": "resolved",
+        "body": "Search is working for all organizations."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-10-search-errors",
+    "kind": "incident",
+    "title": "Elevated search error rates",
+    "impact": "partial-outage",
+    "affectedServiceIds": ["search"],
+    "startedAt": "2026-09-10T22:40:00Z",
+    "resolvedAt": "2026-09-11T01:15:00Z",
+    "updates": [
+      {
+        "at": "2026-09-10T22:40:00Z",
+        "status": "investigating",
+        "body": "Around 20% of search requests are failing."
+      },
+      {
+        "at": "2026-09-10T23:25:00Z",
+        "status": "identified",
+        "body": "The search cluster is running out of memory under nightly reindexing load. We have paused reindexing."
+      },
+      {
+        "at": "2026-09-11T00:30:00Z",
+        "status": "monitoring",
+        "body": "Error rates have dropped. We are restarting reindexing at a lower rate."
+      },
+      {
+        "at": "2026-09-11T01:15:00Z",
+        "status": "resolved",
+        "body": "Search is stable and reindexing has completed."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-12-search-indexing-paused",
+    "kind": "incident",
+    "title": "Search indexing paused",
+    "impact": "degraded",
+    "affectedServiceIds": ["search"],
+    "startedAt": "2026-09-12T16:00:00Z",
+    "resolvedAt": "2026-09-12T16:45:00Z",
+    "updates": [
+      {
+        "at": "2026-09-12T16:00:00Z",
+        "status": "identified",
+        "body": "We have paused indexing while we apply a memory fix to the search cluster. Search works, but new changes will not appear for up to an hour."
+      },
+      {
+        "at": "2026-09-12T16:45:00Z",
+        "status": "resolved",
+        "body": "The fix is applied and indexing has resumed."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-13-search-incomplete",
+    "kind": "incident",
+    "title": "Incomplete code search results",
+    "impact": "degraded",
+    "affectedServiceIds": ["search", "api"],
+    "startedAt": "2026-09-13T03:20:00Z",
+    "resolvedAt": "2026-09-13T05:05:00Z",
+    "updates": [
+      {
+        "at": "2026-09-13T03:20:00Z",
+        "status": "investigating",
+        "body": "Code search in the web app and the search API is returning partial results for some queries."
+      },
+      {
+        "at": "2026-09-13T04:10:00Z",
+        "status": "identified",
+        "body": "One replica set did not pick up the memory fix and is dropping results. We are replacing it."
+      },
+      {
+        "at": "2026-09-13T05:05:00Z",
+        "status": "resolved",
+        "body": "All replicas are healthy and results are complete. We will publish a review of this week's search incidents."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-17-cloud-network",
+    "kind": "incident",
+    "title": "Degraded performance across multiple services",
+    "impact": "degraded",
+    "affectedServiceIds": ["api", "web", "git"],
+    "startedAt": "2026-09-17T19:30:00Z",
+    "resolvedAt": "2026-09-17T20:05:00Z",
+    "updates": [
+      {
+        "at": "2026-09-17T19:30:00Z",
+        "status": "investigating",
+        "body": "Requests to the API, web app and git are slower than usual."
+      },
+      {
+        "at": "2026-09-17T19:45:00Z",
+        "status": "identified",
+        "body": "Our cloud provider reports packet loss in one of our regions. We have shifted traffic to other regions."
+      },
+      {
+        "at": "2026-09-17T20:05:00Z",
+        "status": "resolved",
+        "body": "The provider has resolved the network issue and performance is back to normal."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-24-sso-sign-in",
+    "kind": "incident",
+    "title": "Sign-in failures for SSO users",
+    "impact": "partial-outage",
+    "affectedServiceIds": ["web"],
+    "startedAt": "2026-09-24T11:10:00Z",
+    "resolvedAt": "2026-09-24T11:35:00Z",
+    "updates": [
+      {
+        "at": "2026-09-24T11:10:00Z",
+        "status": "investigating",
+        "body": "Users signing in with SAML single sign-on are seeing an error. Existing sessions are unaffected."
+      },
+      {
+        "at": "2026-09-24T11:22:00Z",
+        "status": "identified",
+        "body": "A rotated signing certificate was not picked up by all sign-in servers. We are restarting them."
+      },
+      {
+        "at": "2026-09-24T11:35:00Z",
+        "status": "resolved",
+        "body": "SSO sign-in is working for all users."
+      }
+    ]
+  },
+  {
+    "id": "inc-2026-09-30-push-notifications",
+    "kind": "incident",
+    "title": "Mobile push notifications delayed",
+    "impact": "degraded",
+    "affectedServiceIds": ["notifications"],
+    "startedAt": "2026-09-30T06:10:00Z",
+    "resolvedAt": "2026-09-30T06:55:00Z",
+    "updates": [
+      {
+        "at": "2026-09-30T06:10:00Z",
+        "status": "investigating",
+        "body": "Push notifications to iOS devices are delayed."
+      },
+      {
+        "at": "2026-09-30T06:35:00Z",
+        "status": "monitoring",
+        "body": "We renewed an expiring push credential and notifications are flowing again."
+      },
+      {
+        "at": "2026-09-30T06:55:00Z",
+        "status": "resolved",
+        "body": "Delayed notifications have been delivered."
+      }
+    ]
+  },
+  {
+    "id": "mnt-2026-10-04-search-upgrade",
+    "kind": "maintenance",
+    "title": "Search cluster upgrade",
+    "impact": "degraded",
+    "affectedServiceIds": ["search"],
+    "startedAt": "2026-10-04T01:00:00Z",
+    "resolvedAt": "2026-10-04T03:00:00Z",
+    "updates": [
+      {
+        "at": "2026-09-27T10:00:00Z",
+        "status": "scheduled",
+        "body": "We are upgrading the search cluster to add memory headroom. Search stays available, but new changes may take up to 30 minutes to appear in results during the window."
+      }
+    ]
+  }
+]

@@ -1,8 +1,9 @@
-import type { Flag, MetricsSnapshot, User } from '../lib/types';
-import flagsJson from './flags.json';
-import metricsJson from './metrics.json';
-import usersJson from './users.json';
+import type { Incident, Service } from '../lib/types';
+import incidentsJson from './incidents.json';
+import servicesJson from './services.json';
 
-export const flags: Flag[] = flagsJson;
-export const users = usersJson as User[];
-export const metrics: MetricsSnapshot = metricsJson;
+/** The fixed current time of the page, so the fixtures read the same on any date. */
+export const NOW = new Date('2026-10-01T12:00:00Z');
+
+export const services = servicesJson as Service[];
+export const incidents = incidentsJson as Incident[];

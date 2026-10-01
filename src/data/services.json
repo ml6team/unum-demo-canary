@@ -1,0 +1,38 @@
+[
+  {
+    "id": "api",
+    "name": "API",
+    "description": "REST and GraphQL API, including API tokens and OAuth apps.",
+    "status": "operational"
+  },
+  {
+    "id": "web",
+    "name": "Web app",
+    "description": "The Northwind dashboard, account settings and sign-in.",
+    "status": "operational"
+  },
+  {
+    "id": "git",
+    "name": "Git operations",
+    "description": "Clone, fetch and push over HTTPS and SSH.",
+    "status": "operational"
+  },
+  {
+    "id": "webhooks",
+    "name": "Webhooks",
+    "description": "Delivery of repository and organization events to your endpoints.",
+    "status": "operational"
+  },
+  {
+    "id": "notifications",
+    "name": "Notifications",
+    "description": "Email, in-app and mobile push notifications.",
+    "status": "operational"
+  },
+  {
+    "id": "search",
+    "name": "Search",
+    "description": "Code, issue and repository search.",
+    "status": "operational"
+  }
+]

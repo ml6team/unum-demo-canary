@@ -1,34 +1,20 @@
 import './style.css';
-import { flags as initialFlags, metrics, users } from './data';
-import { exposedUsers, setEnabled } from './lib/flags';
-import { formatCount, formatDate, formatRate } from './lib/format';
+import { incidents, NOW, services } from './data';
+import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
 import {
-  combined,
-  DEGRADED_THRESHOLD,
-  EMPTY_METRICS,
-  errorRate,
-  type Health,
-  health,
-} from './lib/metrics';
-import type { Flag } from './lib/types';
-
-interface State {
-  flags: Flag[];
-  selectedKey: string;
-}
-
-const state: State = {
-  flags: initialFlags,
-  selectedKey: initialFlags[0]?.key ?? '',
-};
-
-const HEALTH_LABEL: Record<Health, string> = {
-  healthy: 'Healthy',
-  degraded: 'Degraded',
-  'no-traffic': 'No traffic',
-};
+  activeIncidents,
+  affectedServiceNames,
+  groupByDay,
+  incidentState,
+  pastIncidents,
+  upcomingMaintenance,
+  updatesNewestFirst,
+} from './lib/incidents';
+import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
+import type { Incident, Service, ServiceStatus } from './lib/types';
 
 type Child = Node | string;
+type Tone = ServiceStatus | 'maintenance';
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -47,155 +33,188 @@ function byId(id: string): HTMLElement {
   return node;
 }
 
-function metricsFor(key: string) {
-  return metrics.flags[key] ?? EMPTY_METRICS;
+const ICON_PATHS: Record<Tone | 'chevron', string> = {
+  operational: '<circle cx="8" cy="8" r="7"/><path d="m5 8.2 2 2 4-4.2" class="i-mark"/>',
+  degraded: '<circle cx="8" cy="8" r="7"/><path d="M5 8h6" class="i-mark"/>',
+  'partial-outage': '<path d="M8 1.2 15 14H1Z"/><path d="M8 6v3.6M8 11.6v.1" class="i-mark"/>',
+  'major-outage': '<circle cx="8" cy="8" r="7"/><path d="m5.5 5.5 5 5m0-5-5 5" class="i-mark"/>',
+  maintenance: '<circle cx="8" cy="8" r="7"/><path d="M8 4.5V8l2.5 1.5" class="i-mark"/>',
+  chevron: '<path d="m6 4 4 4-4 4" class="i-line"/>',
+};
+
+function icon(name: Tone | 'chevron', className = 'icon'): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('class', className);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = ICON_PATHS[name];
+  return svg;
 }
 
-function rateFor(key: string): number | null {
-  return errorRate(combined(metricsFor(key)));
+function toneOf(incident: Incident): Tone {
+  return incident.kind === 'maintenance' ? 'maintenance' : incident.impact;
 }
 
-function healthPill(value: Health): HTMLElement {
-  return el('span', { class: `pill pill-${value}` }, [HEALTH_LABEL[value]]);
+function badge(tone: Tone): HTMLElement {
+  const label = tone === 'maintenance' ? 'Maintenance' : STATUS_LABEL[tone];
+  return el('span', { class: `badge tone-${tone}` }, [label]);
 }
 
-function flagSwitch(flag: Flag): HTMLButtonElement {
-  const button = el('button', {
-    type: 'button',
-    role: 'switch',
-    class: 'switch',
-    'aria-checked': String(flag.enabled),
-    'aria-label': `Enable ${flag.key}`,
-    'data-toggle': flag.key,
-  });
-  button.append(el('span', { class: 'switch-thumb', 'aria-hidden': 'true' }));
-  return button;
+function time(iso: string, text: string): HTMLTimeElement {
+  return el('time', { datetime: iso }, [text]);
 }
 
-function flagRow(flag: Flag): HTMLTableRowElement {
-  const rate = rateFor(flag.key);
-  const selected = flag.key === state.selectedKey;
-  return el('tr', { 'data-key': flag.key, class: selected ? 'is-selected' : '' }, [
-    el('td', { class: 'col-flag' }, [
-      el(
-        'button',
-        {
-          type: 'button',
-          class: 'flag-key',
-          'data-select': flag.key,
-          'aria-controls': 'details',
-          'aria-current': String(selected),
-        },
-        [flag.key],
-      ),
-      el('span', { class: 'flag-description' }, [flag.description]),
-    ]),
-    el('td', { class: 'col-owner' }, [flag.owner]),
-    el('td', { class: 'col-rate' }, [
-      el('span', { class: 'rate' }, [
-        healthPill(health(rate)),
-        el('span', { class: 'rate-value' }, [formatRate(rate)]),
+function renderOverall(): void {
+  const overall = overallStatus(services);
+  const detail =
+    overall.affected.length > 0
+      ? `Affected: ${overall.affected.map((s) => s.name).join(', ')}`
+      : 'We are not aware of any issues affecting our systems.';
+  byId('overall').replaceChildren(
+    el('section', { class: `banner tone-${overall.status}`, 'aria-label': 'Overall status' }, [
+      icon(overall.status, 'banner-icon'),
+      el('div', { class: 'banner-text' }, [
+        el('p', { class: 'banner-title' }, [overall.title]),
+        el('p', { class: 'banner-detail' }, [detail]),
       ]),
-    ]),
-    el('td', { class: 'col-switch' }, [flagSwitch(flag)]),
-  ]);
-}
-
-function stat(label: string, value: Child, hint?: string): HTMLElement {
-  return el('div', { class: 'stat' }, [
-    el('dt', {}, [label]),
-    el('dd', {}, [value]),
-    ...(hint ? [el('span', { class: 'stat-hint' }, [hint])] : []),
-  ]);
-}
-
-function renderDetails(): void {
-  const container = byId('details');
-  const flag = state.flags.find((f) => f.key === state.selectedKey);
-  if (!flag) {
-    container.replaceChildren(el('p', { class: 'empty' }, ['Select a flag to see its details.']));
-    return;
-  }
-  const totals = combined(metricsFor(flag.key));
-  const rate = errorRate(totals);
-  const exposed = exposedUsers(flag, users);
-
-  container.replaceChildren(
-    el('div', { class: 'details-head' }, [
-      el('h2', { class: 'details-key' }, [flag.key]),
-      el('span', { class: `status status-${flag.enabled ? 'on' : 'off'}` }, [
-        flag.enabled ? 'On' : 'Off',
-      ]),
-    ]),
-    el('p', { class: 'details-description' }, [flag.description]),
-    el('dl', { class: 'meta' }, [
-      el('div', {}, [el('dt', {}, ['Owner']), el('dd', {}, [flag.owner])]),
-      el('div', {}, [el('dt', {}, ['Created']), el('dd', {}, [formatDate(flag.createdAt)])]),
-      el('div', {}, [
-        el('dt', {}, ['Exposure']),
-        el('dd', {}, [`${exposed} of ${users.length} users`]),
-      ]),
-    ]),
-    el('h3', { class: 'section-title' }, [`Traffic, last ${metrics.window}`]),
-    el('dl', { class: 'stats' }, [
-      stat('Requests', formatCount(totals.requests)),
-      stat('Errors', formatCount(totals.errors)),
-      stat('Error rate', formatRate(rate)),
-    ]),
-    el('div', { class: 'details-health' }, [
-      healthPill(health(rate)),
-      el('span', { class: 'muted' }, [`Degraded at ${formatRate(DEGRADED_THRESHOLD)} or more`]),
     ]),
   );
 }
 
-function renderSummary(): void {
-  const enabled = state.flags.filter((f) => f.enabled).length;
-  const degraded = state.flags.filter((f) => health(rateFor(f.key)) === 'degraded').length;
-  byId('summary').textContent =
-    `${state.flags.length} flags, ${enabled} enabled, ${degraded} degraded`;
+function serviceRow(service: Service): HTMLLIElement {
+  return el('li', { class: 'service' }, [
+    el('div', { class: 'service-text' }, [
+      el('h3', { class: 'service-name' }, [service.name]),
+      el('p', { class: 'service-description' }, [service.description]),
+    ]),
+    el('span', { class: `status tone-${service.status}` }, [
+      icon(service.status),
+      STATUS_LABEL[service.status],
+    ]),
+  ]);
 }
 
-function renderRows(): void {
-  byId('flag-rows').replaceChildren(...state.flags.map(flagRow));
+function timeline(incident: Incident): HTMLOListElement {
+  return el(
+    'ol',
+    { class: 'timeline' },
+    updatesNewestFirst(incident).map((update) =>
+      el('li', { class: 'update' }, [
+        el('div', { class: 'update-head' }, [
+          el('span', { class: 'update-status' }, [UPDATE_LABEL[update.status]]),
+          time(update.at, formatDateTime(update.at)),
+        ]),
+        el('p', { class: 'update-body' }, [update.body]),
+      ]),
+    ),
+  );
 }
 
-function syncRows(): void {
-  for (const row of byId('flag-rows').querySelectorAll<HTMLTableRowElement>('tr')) {
-    const key = row.dataset.key;
-    const flag = state.flags.find((f) => f.key === key);
-    if (!flag) continue;
-    const selected = key === state.selectedKey;
-    row.classList.toggle('is-selected', selected);
-    row.querySelector('[data-select]')?.setAttribute('aria-current', String(selected));
-    row.querySelector('[data-toggle]')?.setAttribute('aria-checked', String(flag.enabled));
+function incidentMeta(incident: Incident): HTMLElement {
+  const parts: Child[] = [
+    time(incident.startedAt, formatRange(incident.startedAt, incident.resolvedAt)),
+  ];
+  if (incident.resolvedAt !== null && incidentState(incident, NOW) === 'resolved') {
+    parts.push(el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']));
+    parts.push(
+      el('span', {}, [
+        el('span', { class: 'visually-hidden' }, ['Duration ']),
+        formatIncidentDuration(incident.startedAt, incident.resolvedAt),
+      ]),
+    );
   }
+  return el('p', { class: 'incident-meta' }, parts);
 }
 
-function update(): void {
-  syncRows();
-  renderSummary();
-  renderDetails();
+function affects(incident: Incident): HTMLElement {
+  return el('p', { class: 'incident-affects' }, [
+    el('span', { class: 'muted' }, ['Affects ']),
+    affectedServiceNames(incident, services).join(', '),
+  ]);
 }
 
-byId('flag-rows').addEventListener('click', (event) => {
-  const target = event.target as HTMLElement;
-  const toggle = target.closest<HTMLElement>('[data-toggle]');
-  if (toggle?.dataset.toggle) {
-    const key = toggle.dataset.toggle;
-    const current = state.flags.find((f) => f.key === key);
-    state.flags = setEnabled(state.flags, key, !current?.enabled);
-    state.selectedKey = key;
-    update();
+function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
+  const details = el('details', { class: `incident tone-${toneOf(incident)}` }, [
+    el('summary', { class: 'incident-summary' }, [
+      el('span', { class: 'incident-heading' }, [
+        el('span', { class: 'incident-title' }, [incident.title]),
+        badge(toneOf(incident)),
+      ]),
+      incidentMeta(incident),
+      affects(incident),
+      icon('chevron', 'chevron'),
+    ]),
+    timeline(incident),
+  ]);
+  details.open = open;
+  return details;
+}
+
+function renderActive(): void {
+  const active = activeIncidents(incidents, NOW);
+  if (active.length === 0) return;
+  byId('active').replaceChildren(
+    el('section', { class: 'notice', 'aria-labelledby': 'active-heading' }, [
+      el('h2', { id: 'active-heading', class: 'notice-heading' }, ['Active incidents']),
+      ...active.map((i) => incidentDetails(i, true)),
+    ]),
+  );
+}
+
+function renderMaintenance(): void {
+  const upcoming = upcomingMaintenance(incidents, NOW);
+  if (upcoming.length === 0) return;
+  byId('maintenance').replaceChildren(
+    el('section', { class: 'notice', 'aria-labelledby': 'maintenance-heading' }, [
+      el('h2', { id: 'maintenance-heading', class: 'notice-heading' }, ['Scheduled maintenance']),
+      ...upcoming.map((m) =>
+        el('article', { class: 'maintenance tone-maintenance' }, [
+          icon('maintenance', 'maintenance-icon'),
+          el('div', { class: 'maintenance-text' }, [
+            el('h3', { class: 'maintenance-title' }, [m.title]),
+            el('p', { class: 'incident-meta' }, [
+              el('span', { class: 'visually-hidden' }, ['Scheduled for ']),
+              time(m.startedAt, formatRange(m.startedAt, m.resolvedAt)),
+            ]),
+            affects(m),
+            el('p', { class: 'maintenance-body' }, [m.updates.at(-1)?.body ?? '']),
+          ]),
+        ]),
+      ),
+    ]),
+  );
+}
+
+function renderHistory(): void {
+  const groups = groupByDay(pastIncidents(incidents, NOW));
+  if (groups.length === 0) {
+    byId('days').replaceChildren(
+      el('p', { class: 'empty' }, ['No incidents reported in the last 90 days.']),
+    );
     return;
   }
-  const row = target.closest<HTMLTableRowElement>('tr[data-key]');
-  if (row?.dataset.key) {
-    state.selectedKey = row.dataset.key;
-    update();
-  }
-});
+  byId('days').replaceChildren(
+    ...groups.map((group) =>
+      el('section', { class: 'day', 'aria-labelledby': `day-${group.day}` }, [
+        el('h3', { class: 'day-heading', id: `day-${group.day}` }, [
+          time(group.day, formatDay(group.day)),
+        ]),
+        el(
+          'div',
+          { class: 'day-incidents' },
+          group.incidents.map((i) => incidentDetails(i)),
+        ),
+      ]),
+    ),
+  );
+}
 
-byId('window-label').textContent = `Metrics: last ${metrics.window}`;
-renderRows();
-update();
+renderOverall();
+renderActive();
+renderMaintenance();
+byId('services').replaceChildren(...services.map(serviceRow));
+byId('updated').replaceChildren(
+  'Updated ',
+  time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
+);
+renderHistory();

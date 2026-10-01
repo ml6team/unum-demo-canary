@@ -4,46 +4,50 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="Current status and incident history for Northwind services." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Flagpole</title>
+    <title>Northwind status</title>
   </head>
   <body>
-    <header class="topbar">
-      <div class="topbar-inner">
+    <header class="site-header">
+      <div class="container header-inner">
         <a class="brand" href="./">
-          <svg class="brand-mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <rect x="4" y="2" width="2" height="20" rx="1" fill="currentColor" />
-            <path d="M7 3h11.5a.5.5 0 0 1 .4.8L16.5 7.5l2.4 3.7a.5.5 0 0 1-.4.8H7z" fill="var(--accent)" />
+          <svg class="brand-mark" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <rect width="24" height="24" rx="6" fill="currentColor" />
+            <path d="M12 4.5 17.5 18 12 15.2 6.5 18Z" fill="#fff" />
           </svg>
-          <span>Flagpole</span>
+          <span class="brand-name">Northwind</span>
+          <span class="brand-suffix">status</span>
         </a>
-        <span class="env-badge">production</span>
-        <span class="topbar-meta" id="window-label"></span>
+        <a class="header-link" href="#history">Incident history</a>
       </div>
     </header>
-    <main class="page">
-      <div class="page-head">
-        <h1>Feature flags</h1>
-        <p class="summary" id="summary"></p>
-      </div>
-      <div class="layout">
-        <section class="card" aria-labelledby="flags-heading">
-          <h2 id="flags-heading" class="visually-hidden">All flags</h2>
-          <table class="flag-table">
-            <thead>
-              <tr>
-                <th scope="col">Flag</th>
-                <th scope="col" class="col-owner">Owner</th>
-                <th scope="col" class="col-rate">Error rate</th>
-                <th scope="col" class="col-switch">Enabled</th>
-              </tr>
-            </thead>
-            <tbody id="flag-rows"></tbody>
-          </table>
-        </section>
-        <aside class="card details" id="details" aria-live="polite" aria-label="Flag details"></aside>
-      </div>
+    <main class="container page">
+      <h1 class="visually-hidden">Northwind status</h1>
+      <div id="overall"></div>
+      <div id="active"></div>
+      <div id="maintenance"></div>
+      <section class="card" aria-labelledby="services-heading">
+        <div class="card-head">
+          <h2 id="services-heading">Services</h2>
+          <span class="muted" id="updated"></span>
+        </div>
+        <ul class="services" id="services"></ul>
+      </section>
+      <section class="history" id="history" aria-labelledby="history-heading">
+        <div class="section-head">
+          <h2 id="history-heading">Past incidents</h2>
+          <span class="muted">Last 90 days, times in UTC</span>
+        </div>
+        <div id="days"></div>
+      </section>
     </main>
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>Northwind, Inc.</span>
+        <span class="muted">All times are shown in UTC.</span>
+      </div>
+    </footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
