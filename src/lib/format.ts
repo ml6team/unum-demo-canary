@@ -1,3 +1,4 @@
+import { HISTORY_DAYS } from './incidents';
 import { durationMs, HOUR_MS, MINUTE_MS } from './time';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -48,4 +49,11 @@ export function formatDuration(ms: number): string {
 
 export function formatIncidentDuration(start: string, end: string): string {
   return formatDuration(durationMs(start, end));
+}
+
+export const UPTIME_LABEL = `Uptime, last ${HISTORY_DAYS} days`;
+
+/** "99.5%", "100.0%": always one decimal. */
+export function formatUptime(percent: number): string {
+  return `${percent.toFixed(1)}%`;
 }
