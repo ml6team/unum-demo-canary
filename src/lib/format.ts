@@ -49,3 +49,8 @@ export function formatDuration(ms: number): string {
 export function formatIncidentDuration(start: string, end: string): string {
   return formatDuration(durationMs(start, end));
 }
+
+/** "100%" for 100, otherwise always two decimals: "99.90%". */
+export function formatUptime(percent: number): string {
+  return percent === 100 ? '100%' : `${percent.toFixed(2)}%`;
+}
