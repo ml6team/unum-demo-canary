@@ -340,6 +340,7 @@ a {
 
 .service {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -362,6 +363,35 @@ a {
 .service-description {
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.uptime {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 12px;
+}
+
+.uptime-bars {
+  display: flex;
+  flex: 1;
+  gap: 1px;
+}
+
+.uptime-bar {
+  flex: 1;
+  min-width: 2px;
+  height: 28px;
+  border-radius: 1px;
+  background: var(--tone-solid);
+}
+
+.uptime-percent {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .status {
@@ -662,6 +692,12 @@ a {
 
   .status {
     font-size: 13px;
+  }
+
+  .uptime {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 6px;
   }
 
   .incident-summary {
