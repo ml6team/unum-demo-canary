@@ -60,10 +60,10 @@ describe('uptimeDays', () => {
   it('AC1: returns 90 consecutive UTC days ending on the day of now, oldest first', () => {
     const days = uptimeDays('api', [], NOW);
     expect(days).toHaveLength(90);
-    expect(days[0].day).toBe('2026-07-04');
-    expect(days[89].day).toBe('2026-10-01');
+    expect(days[0]?.day).toBe('2026-07-04');
+    expect(days[89]?.day).toBe('2026-10-01');
     for (let i = 1; i < days.length; i++) {
-      const gap = Date.parse(days[i].day) - Date.parse(days[i - 1].day);
+      const gap = Date.parse(days[i]?.day ?? '') - Date.parse(days[i - 1]?.day ?? '');
       expect(gap).toBe(DAY_MS);
     }
   });
@@ -101,7 +101,7 @@ describe('uptimeDays', () => {
     expect(days).toHaveLength(90);
     expect(days[0]).toEqual({ day: '2026-07-04', status: 'degraded' });
     expect(days[1]).toEqual({ day: '2026-07-05', status: 'degraded' });
-    expect(days[2].status).toBe('operational');
+    expect(days[2]?.status).toBe('operational');
   });
 
   it('AC2: every day is operational without incidents', () => {
