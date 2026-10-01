@@ -311,6 +311,16 @@ button {
   color: var(--degraded-text);
 }
 
+.rate .pill.pill-risk {
+  min-width: 0;
+}
+
+.pill-risk {
+  border: 1px solid var(--degraded-text);
+  background: var(--degraded-bg);
+  color: var(--degraded-text);
+}
+
 .pill-no-traffic {
   background: var(--idle-bg);
   color: var(--idle-text);
@@ -460,6 +470,62 @@ button {
   gap: 10px;
   margin-top: 12px;
   font-size: 13px;
+}
+
+.compare {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.compare-cell {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.compare-cell:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.compare-cell:last-child {
+  padding-right: 0;
+}
+
+.compare-cell-head {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.compare-cell-row {
+  font-weight: 600;
+}
+
+.compare-pill {
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+.compare-delta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.compare-delta-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.compare-risk {
+  margin-top: 10px;
 }
 
 .empty {

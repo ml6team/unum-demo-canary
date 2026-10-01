@@ -1,12 +1,14 @@
 import './style.css';
 import { flags as initialFlags, metrics, users } from './data';
 import { exposedUsers, setEnabled } from './lib/flags';
-import { formatCount, formatDate, formatRate } from './lib/format';
+import { formatCount, formatDate, formatRate, formatRateDelta } from './lib/format';
 import {
   combined,
+  compareGroups,
   DEGRADED_THRESHOLD,
   EMPTY_METRICS,
   errorRate,
+  type GroupStats,
   type Health,
   health,
 } from './lib/metrics';
@@ -59,6 +61,10 @@ function healthPill(value: Health): HTMLElement {
   return el('span', { class: `pill pill-${value}` }, [HEALTH_LABEL[value]]);
 }
 
+function canaryRiskPill(): HTMLElement {
+  return el('span', { class: 'pill pill-risk' }, ['Canary at risk']);
+}
+
 function flagSwitch(flag: Flag): HTMLButtonElement {
   const button = el('button', {
     type: 'button',
@@ -74,6 +80,7 @@ function flagSwitch(flag: Flag): HTMLButtonElement {
 
 function flagRow(flag: Flag): HTMLTableRowElement {
   const rate = rateFor(flag.key);
+  const atRisk = compareGroups(metricsFor(flag.key)).canaryAtRisk;
   const selected = flag.key === state.selectedKey;
   return el('tr', { 'data-key': flag.key, class: selected ? 'is-selected' : '' }, [
     el('td', { class: 'col-flag' }, [
@@ -94,6 +101,7 @@ function flagRow(flag: Flag): HTMLTableRowElement {
     el('td', { class: 'col-rate' }, [
       el('span', { class: 'rate' }, [
         healthPill(health(rate)),
+        ...(atRisk ? [canaryRiskPill()] : []),
         el('span', { class: 'rate-value' }, [formatRate(rate)]),
       ]),
     ]),
@@ -107,6 +115,45 @@ function stat(label: string, value: Child, hint?: string): HTMLElement {
     el('dd', {}, [value]),
     ...(hint ? [el('span', { class: 'stat-hint' }, [hint])] : []),
   ]);
+}
+
+function groupRow(label: string, group: GroupStats): HTMLTableRowElement {
+  return el('tr', {}, [
+    el('th', { scope: 'row', class: 'compare-cell compare-cell-row' }, [label]),
+    el('td', { class: 'compare-cell' }, [formatCount(group.counts.requests)]),
+    el('td', { class: 'compare-cell' }, [formatCount(group.counts.errors)]),
+    el('td', { class: 'compare-cell' }, [formatRate(group.rate)]),
+    el('td', { class: 'compare-cell' }, [
+      el('span', { class: `pill pill-${group.health} compare-pill` }, [HEALTH_LABEL[group.health]]),
+    ]),
+  ]);
+}
+
+function comparisonSection(key: string): Node[] {
+  const comparison = compareGroups(metricsFor(key));
+  return [
+    el('h3', { class: 'section-title' }, ['Canary vs baseline']),
+    el('table', { class: 'compare' }, [
+      el('thead', {}, [
+        el('tr', {}, [
+          el('th', { scope: 'col', class: 'compare-cell compare-cell-head' }, ['Group']),
+          el('th', { scope: 'col', class: 'compare-cell compare-cell-head' }, ['Requests']),
+          el('th', { scope: 'col', class: 'compare-cell compare-cell-head' }, ['Errors']),
+          el('th', { scope: 'col', class: 'compare-cell compare-cell-head' }, ['Error rate']),
+          el('th', { scope: 'col', class: 'compare-cell compare-cell-head' }, ['Health']),
+        ]),
+      ]),
+      el('tbody', {}, [
+        groupRow('Canary', comparison.canary),
+        groupRow('Baseline', comparison.baseline),
+      ]),
+    ]),
+    el('p', { class: 'compare-delta' }, [
+      el('span', { class: 'muted' }, ['Difference, canary minus baseline']),
+      el('span', { class: 'compare-delta-value' }, [formatRateDelta(comparison.delta)]),
+    ]),
+    ...(comparison.canaryAtRisk ? [el('p', { class: 'compare-risk' }, [canaryRiskPill()])] : []),
+  ];
 }
 
 function renderDetails(): void {
@@ -146,6 +193,7 @@ function renderDetails(): void {
       healthPill(health(rate)),
       el('span', { class: 'muted' }, [`Degraded at ${formatRate(DEGRADED_THRESHOLD)} or more`]),
     ]),
+    ...comparisonSection(flag.key),
   );
 }
 
