@@ -7,6 +7,8 @@ export interface Service {
   name: string;
   description: string;
   status: ServiceStatus;
+  /** ISO instant from which we have status history for this service. Absent = the full 90 days. */
+  trackedSince?: string;
 }
 
 export type IncidentKind = 'incident' | 'maintenance';
