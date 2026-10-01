@@ -40,6 +40,15 @@ export function activeIncidents(incidents: Incident[], now: Date): Incident[] {
   return incidents.filter((i) => incidentState(i, now) === 'active').sort(newestFirst);
 }
 
+/**
+ * Incidents that affect at least one of `serviceIds`. An empty selection means no filter
+ * and returns every incident. Order is preserved.
+ */
+export function filterByServices(incidents: Incident[], serviceIds: string[]): Incident[] {
+  if (serviceIds.length === 0) return [...incidents];
+  return incidents.filter((i) => i.affectedServiceIds.some((id) => serviceIds.includes(id)));
+}
+
 export interface DayGroup {
   day: string;
   incidents: Incident[];
