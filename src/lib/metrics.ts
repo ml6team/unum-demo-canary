@@ -26,3 +26,28 @@ export function health(rate: number | null): Health {
   if (rate === null) return 'no-traffic';
   return rate >= DEGRADED_THRESHOLD ? 'degraded' : 'healthy';
 }
+
+export type Verdict = 'canary-worse' | 'canary-better' | 'similar' | 'no-data';
+
+/** Canary error rate must differ from baseline by at least this fraction (0.005 = 0.5 points). */
+export const COMPARISON_THRESHOLD = 0.005;
+
+export interface GroupComparison {
+  canary: number | null;
+  baseline: number | null;
+  /** Canary minus baseline, as a fraction; null when either rate is null. */
+  delta: number | null;
+  verdict: Verdict;
+}
+
+export function compareGroups(metrics: FlagMetrics): GroupComparison {
+  const canary = errorRate(metrics.canary);
+  const baseline = errorRate(metrics.baseline);
+  if (canary === null || baseline === null) {
+    return { canary, baseline, delta: null, verdict: 'no-data' };
+  }
+  const delta = canary - baseline;
+  if (delta >= COMPARISON_THRESHOLD) return { canary, baseline, delta, verdict: 'canary-worse' };
+  if (delta <= -COMPARISON_THRESHOLD) return { canary, baseline, delta, verdict: 'canary-better' };
+  return { canary, baseline, delta, verdict: 'similar' };
+}
