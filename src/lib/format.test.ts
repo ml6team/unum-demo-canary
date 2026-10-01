@@ -6,6 +6,7 @@ import {
   formatIncidentDuration,
   formatRange,
   formatTime,
+  formatUptime,
 } from './format';
 import { HOUR_MS, MINUTE_MS } from './time';
 
@@ -69,5 +70,18 @@ describe('formatDuration', () => {
 describe('formatIncidentDuration', () => {
   it('measures between two instants', () => {
     expect(formatIncidentDuration('2026-08-19T13:02:00Z', '2026-08-19T16:08:00Z')).toBe('3h 6m');
+  });
+});
+
+describe('formatUptime', () => {
+  it('AC4: shows at most two decimals and no trailing zeros', () => {
+    expect(formatUptime(100)).toBe('100%');
+    expect(formatUptime(90)).toBe('90%');
+    expect(formatUptime(99.95)).toBe('99.95%');
+    expect(formatUptime(99.9)).toBe('99.9%');
+  });
+
+  it('AC5: says there is no data instead of a percentage', () => {
+    expect(formatUptime(null)).toBe('No data');
   });
 });

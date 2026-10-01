@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
-import { activeIncidents, historyStart, incidentState } from './incidents';
+import { activeIncidents, historyStart, incidentState, serviceUptime } from './incidents';
 import { STATUS_LABEL } from './status';
 import { utcDayKey } from './time';
 
@@ -69,5 +69,28 @@ describe('fixtures', () => {
     expect(past.some((i) => i.kind === 'maintenance')).toBe(true);
     expect(past.some((i) => i.affectedServiceIds.length > 1)).toBe(true);
     expect(incidents.some((i) => incidentState(i, NOW) === 'upcoming')).toBe(true);
+  });
+
+  it('AC1: every service has a 90-day uptime figure', () => {
+    for (const s of services) {
+      const uptime = serviceUptime(s, incidents, NOW);
+      expect(uptime).not.toBeNull();
+      expect(uptime).toBeGreaterThanOrEqual(0);
+      expect(uptime).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('AC2: computes the expected 90-day uptime of each service', () => {
+    const uptime = Object.fromEntries(
+      services.map((s) => [s.id, serviceUptime(s, incidents, NOW)]),
+    );
+    expect(uptime).toEqual({
+      git: 99.97,
+      api: 99.98,
+      web: 99.96,
+      webhooks: 99.86,
+      search: 99.76,
+      notifications: 100,
+    });
   });
 });

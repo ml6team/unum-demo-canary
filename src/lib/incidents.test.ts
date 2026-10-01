@@ -5,11 +5,13 @@ import {
   groupByDay,
   historyStart,
   incidentState,
+  isDowntime,
   pastIncidents,
+  serviceUptime,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './incidents';
-import type { Incident } from './types';
+import type { Incident, Service } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
 
@@ -153,5 +155,86 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('isDowntime', () => {
+  it('AC2: is true only for partial and major outage incidents', () => {
+    const at = ['2026-09-01T00:00:00Z', '2026-09-01T01:00:00Z'] as const;
+    expect(isDowntime(incident('a', ...at, { impact: 'partial-outage' }))).toBe(true);
+    expect(isDowntime(incident('a', ...at, { impact: 'major-outage' }))).toBe(true);
+    expect(isDowntime(incident('a', ...at, { impact: 'degraded' }))).toBe(false);
+    expect(isDowntime(incident('a', ...at, { impact: 'major-outage', kind: 'maintenance' }))).toBe(
+      false,
+    );
+  });
+});
+
+describe('serviceUptime', () => {
+  const api: Service = { id: 'api', name: 'API', description: '', status: 'operational' };
+  const outage = (id: string, startedAt: string, resolvedAt: string | null, extra = {}) =>
+    incident(id, startedAt, resolvedAt, { impact: 'partial-outage', ...extra });
+
+  it('AC2: is 100 when the service has no incidents', () => {
+    expect(serviceUptime(api, [], NOW)).toBe(100);
+  });
+
+  it('AC2: is 90 after 9 of 90 days of partial outage', () => {
+    const down = outage('a', '2026-08-01T00:00:00Z', '2026-08-10T00:00:00Z');
+    expect(serviceUptime(api, [down], NOW)).toBe(90);
+  });
+
+  it('AC2: ignores other services, upcoming, degraded and maintenance incidents', () => {
+    const noise = [
+      outage('other', '2026-08-01T00:00:00Z', '2026-08-10T00:00:00Z', {
+        affectedServiceIds: ['web'],
+      }),
+      outage('upcoming', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z', { kind: 'maintenance' }),
+      incident('degraded', '2026-08-01T00:00:00Z', '2026-08-10T00:00:00Z'),
+      outage('maintenance', '2026-08-01T00:00:00Z', '2026-08-10T00:00:00Z', {
+        kind: 'maintenance',
+      }),
+    ];
+    expect(serviceUptime(api, noise, NOW)).toBe(100);
+  });
+
+  it('AC2: counts overlapping outages once', () => {
+    const overlapping = [
+      outage('a', '2026-08-01T00:00:00Z', '2026-08-02T00:00:00Z'),
+      outage('b', '2026-08-01T12:00:00Z', '2026-08-02T12:00:00Z', { impact: 'major-outage' }),
+    ];
+    expect(serviceUptime(api, overlapping, NOW)).toBe(98.33);
+  });
+
+  it('AC2: counts an outage that is still open up to now', () => {
+    expect(serviceUptime(api, [outage('a', '2026-09-22T12:00:00Z', null)], NOW)).toBe(90);
+    const resolvesLater = outage('a', '2026-09-22T12:00:00Z', '2026-10-02T12:00:00Z');
+    expect(serviceUptime(api, [resolvesLater], NOW)).toBe(90);
+  });
+
+  it('AC2: counts only the part of an outage that falls inside the window', () => {
+    const starts = outage('a', '2026-06-30T12:00:00Z', '2026-07-12T12:00:00Z');
+    expect(serviceUptime(api, [starts], NOW)).toBe(90);
+  });
+
+  it('AC4: never rounds up to 100 when there was any downtime', () => {
+    const brief = outage('a', '2026-09-01T00:00:00Z', '2026-09-01T00:01:00Z');
+    expect(serviceUptime(api, [brief], NOW)).toBe(99.99);
+  });
+
+  it('AC4: rounds to at most two decimals', () => {
+    const hour = outage('a', '2026-09-01T00:00:00Z', '2026-09-01T01:00:00Z');
+    expect(serviceUptime(api, [hour], NOW)).toBe(99.95);
+  });
+
+  it('AC5: is null when the service is tracked from now or later', () => {
+    expect(serviceUptime({ ...api, trackedSince: '2026-10-02T00:00:00Z' }, [], NOW)).toBeNull();
+    expect(serviceUptime({ ...api, trackedSince: '2026-10-01T12:00:00Z' }, [], NOW)).toBeNull();
+  });
+
+  it('AC5: starts the window at trackedSince when that is inside the window', () => {
+    const young = { ...api, trackedSince: '2026-09-21T12:00:00Z' };
+    const down = outage('a', '2026-09-25T00:00:00Z', '2026-09-26T00:00:00Z');
+    expect(serviceUptime(young, [down], NOW)).toBe(90);
   });
 });
