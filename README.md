@@ -16,3 +16,5 @@ npm run build      # outputs dist/
 ```
 
 Pushes to `main` deploy to GitHub Pages. See `AGENTS.md` for project conventions.
+
+Skill test: this sentence exists only on a throwaway branch.
