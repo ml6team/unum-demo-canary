@@ -375,6 +375,26 @@ a {
   white-space: nowrap;
 }
 
+.service-side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.uptime {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: right;
+}
+
+.uptime-value {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Badges */
 
 .badge {
@@ -662,6 +682,14 @@ a {
 
   .status {
     font-size: 13px;
+  }
+
+  .service-side {
+    max-width: 45%;
+  }
+
+  .uptime {
+    font-size: 12px;
   }
 
   .incident-summary {

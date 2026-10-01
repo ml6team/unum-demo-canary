@@ -1,6 +1,6 @@
 # Northwind status
 
-Public status page for Northwind. It shows the current status of each service, upcoming scheduled maintenance and the incident history of the last 90 days, with every update for each incident.
+Public status page for Northwind. It shows the current status of each service, upcoming scheduled maintenance and the incident history of the last 90 days, with every update for each incident. Each service also shows its uptime over the last 90 days: the share of that rolling window not spent in an incident, rounded down to one decimal. Maintenance windows do not count as downtime.
 
 Data comes from the JSON fixtures in `src/data/`. The page's current time is fixed at `NOW` in `src/data/index.ts` (Oct 1, 2026, 12:00 UTC), so it reads the same on any date.
 
