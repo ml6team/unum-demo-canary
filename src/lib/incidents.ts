@@ -65,3 +65,56 @@ export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
 export function affectedServiceNames(incident: Incident, services: Service[]): string[] {
   return services.filter((s) => incident.affectedServiceIds.includes(s.id)).map((s) => s.name);
 }
+
+/** True for incidents that count as downtime: kind 'incident' with a partial or major outage. */
+export function isDowntime(incident: Incident): boolean {
+  return (
+    incident.kind === 'incident' &&
+    (incident.impact === 'partial-outage' || incident.impact === 'major-outage')
+  );
+}
+
+/**
+ * Share of [max(now - days, trackedSince), now] the service was up, in percent, rounded to two
+ * decimals. Returns null when that window has no length (no history). Never returns 100 when the
+ * service had downtime in the window.
+ */
+export function serviceUptime(
+  service: Service,
+  incidents: Incident[],
+  now: Date,
+  days = HISTORY_DAYS,
+): number | null {
+  const end = now.getTime();
+  const windowStart = addUtcDays(now, -days).getTime();
+  const start = service.trackedSince
+    ? Math.max(windowStart, Date.parse(service.trackedSince))
+    : windowStart;
+  const windowMs = end - start;
+  if (windowMs <= 0) return null;
+
+  const intervals = incidents
+    .filter(
+      (i) =>
+        isDowntime(i) &&
+        i.affectedServiceIds.includes(service.id) &&
+        incidentState(i, now) !== 'upcoming',
+    )
+    .map((i) => ({
+      from: Math.max(Date.parse(i.startedAt), start),
+      to: Math.min(i.resolvedAt === null ? end : Date.parse(i.resolvedAt), end),
+    }))
+    .filter((interval) => interval.to > interval.from)
+    .sort((a, b) => a.from - b.from);
+
+  let downMs = 0;
+  let coveredTo = start;
+  for (const { from, to } of intervals) {
+    const clippedFrom = Math.max(from, coveredTo);
+    if (to > clippedFrom) downMs += to - clippedFrom;
+    coveredTo = Math.max(coveredTo, to);
+  }
+
+  const uptime = Math.round(((windowMs - downMs) / windowMs) * 10000) / 100;
+  return downMs > 0 ? Math.min(uptime, 99.99) : uptime;
+}

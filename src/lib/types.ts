@@ -7,6 +7,8 @@ export interface Service {
   name: string;
   description: string;
   status: ServiceStatus;
+  /** ISO instant from which the service has been monitored. Absent means the whole window. */
+  trackedSince?: string;
 }
 
 export type IncidentKind = 'incident' | 'maintenance';
