@@ -49,3 +49,9 @@ export function formatDuration(ms: number): string {
 export function formatIncidentDuration(start: string, end: string): string {
   return formatDuration(durationMs(start, end));
 }
+
+/** "99.95%", "90%", "100%"; "No data" for null. At most two decimals, no trailing zeros. */
+export function formatUptime(uptime: number | null): string {
+  if (uptime === null) return 'No data';
+  return `${Number(uptime.toFixed(2))}%`;
+}
