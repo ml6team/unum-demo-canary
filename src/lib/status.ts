@@ -1,4 +1,5 @@
 import type { IncidentUpdateStatus, Service, ServiceStatus } from './types';
+import type { DayTone } from './uptime';
 
 const SEVERITY: Record<ServiceStatus, number> = {
   operational: 0,
@@ -12,6 +13,12 @@ export const STATUS_LABEL: Record<ServiceStatus, string> = {
   degraded: 'Degraded performance',
   'partial-outage': 'Partial outage',
   'major-outage': 'Major outage',
+};
+
+export const DAY_TONE_LABEL: Record<DayTone, string> = {
+  ...STATUS_LABEL,
+  operational: 'No incident',
+  maintenance: 'Maintenance',
 };
 
 const OVERALL_TITLE: Record<ServiceStatus, string> = {

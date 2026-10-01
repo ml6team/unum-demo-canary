@@ -51,3 +51,37 @@ export function serviceDays(
     };
   });
 }
+
+export interface ServiceUptime {
+  /** 0 to 100, truncated to 2 decimals; 100 only when downtimeMs is 0. */
+  percent: number;
+  downtimeMs: number;
+  windowMs: number;
+}
+
+/** Share of the window, from the first day's start to `now`, outside the service's incidents. */
+export function serviceUptime(
+  serviceId: string,
+  incidents: Incident[],
+  now: Date,
+  days = HISTORY_DAYS,
+): ServiceUptime {
+  const windowStart = historyStart(now, days).getTime();
+  const windowMs = now.getTime() - windowStart;
+  const clipped = serviceIntervals(serviceId, incidents, now)
+    .filter(({ incident }) => incident.kind === 'incident')
+    .map(({ start, end }) => ({ start: Math.max(start, windowStart), end }))
+    .filter(({ start, end }) => end > start)
+    .sort((a, b) => a.start - b.start);
+
+  let downtimeMs = 0;
+  let coveredUntil = windowStart;
+  for (const { start, end } of clipped) {
+    const from = Math.max(start, coveredUntil);
+    if (end > from) downtimeMs += end - from;
+    coveredUntil = Math.max(coveredUntil, end);
+  }
+
+  const percent = Math.floor((1 - downtimeMs / windowMs) * 10000) / 100;
+  return { percent: downtimeMs > 0 ? Math.min(percent, 99.99) : percent, downtimeMs, windowMs };
+}
