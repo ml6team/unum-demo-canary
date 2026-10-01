@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { NOW as FIXTURE_NOW, incidents as fixtureIncidents, services } from '../data';
 import {
   activeIncidents,
   affectedServiceNames,
@@ -6,9 +7,12 @@ import {
   historyStart,
   incidentState,
   pastIncidents,
+  serviceDowntimeMs,
+  serviceUptime,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './incidents';
+import { HOUR_MS, MINUTE_MS } from './time';
 import type { Incident } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
@@ -153,5 +157,108 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('serviceDowntimeMs', () => {
+  const windowStart = '2026-07-03T12:00:00Z';
+
+  it('AC3: is 0 when no incident affects the service', () => {
+    expect(serviceDowntimeMs([], 'api', NOW)).toBe(0);
+    const other = incident('a', '2026-09-01T10:00:00Z', '2026-09-01T11:00:00Z', {
+      affectedServiceIds: ['git'],
+    });
+    expect(serviceDowntimeMs([other], 'api', NOW)).toBe(0);
+  });
+
+  it('AC2: counts the duration of an incident inside the window', () => {
+    const list = [incident('a', '2026-09-01T10:00:00Z', '2026-09-01T11:30:00Z')];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(90 * MINUTE_MS);
+  });
+
+  it('AC2: does not count an incident that ended before the window start', () => {
+    const list = [incident('a', '2026-06-30T10:00:00Z', windowStart)];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(0);
+  });
+
+  it('AC5: counts only the part of an incident after the window start', () => {
+    const list = [incident('a', '2026-07-03T10:00:00Z', '2026-07-03T13:00:00Z')];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(HOUR_MS);
+  });
+
+  it('AC5: counts an ongoing incident up to now', () => {
+    const list = [incident('a', '2026-10-01T09:00:00Z', null)];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(3 * HOUR_MS);
+  });
+
+  it('AC5: counts an incident resolved after now only up to now', () => {
+    const list = [incident('a', '2026-10-01T10:00:00Z', '2026-10-01T15:00:00Z')];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(2 * HOUR_MS);
+  });
+
+  it('AC2: does not count an upcoming incident', () => {
+    const list = [incident('a', '2026-10-02T10:00:00Z', '2026-10-02T11:00:00Z')];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(0);
+  });
+
+  it('AC2: counts overlapping incidents on one service as their union', () => {
+    const list = [
+      incident('a', '2026-09-01T10:00:00Z', '2026-09-01T12:00:00Z'),
+      incident('b', '2026-09-01T11:00:00Z', '2026-09-01T13:00:00Z'),
+    ];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(3 * HOUR_MS);
+  });
+
+  it('AC2: counts a multi-service incident for each of its services', () => {
+    const list = [
+      incident('a', '2026-09-01T10:00:00Z', '2026-09-01T11:00:00Z', {
+        affectedServiceIds: ['api', 'git'],
+      }),
+    ];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(HOUR_MS);
+    expect(serviceDowntimeMs(list, 'git', NOW)).toBe(HOUR_MS);
+    expect(serviceDowntimeMs(list, 'search', NOW)).toBe(0);
+  });
+
+  it('AC2: ignores maintenance entries', () => {
+    const list = [
+      incident('a', '2026-09-01T10:00:00Z', '2026-09-01T11:00:00Z', { kind: 'maintenance' }),
+    ];
+    expect(serviceDowntimeMs(list, 'api', NOW)).toBe(0);
+  });
+});
+
+describe('serviceUptime', () => {
+  it('AC3: is 100 for a service with no incidents', () => {
+    expect(serviceUptime([], 'api', NOW)).toBe(100);
+    expect(serviceUptime([], 'unknown-service', NOW)).toBe(100);
+  });
+
+  it('AC2: is the share of the window outside incidents, to one decimal', () => {
+    const list = [incident('a', '2026-09-01T10:00:00Z', '2026-09-01T11:30:00Z')];
+    expect(serviceUptime(list, 'api', NOW)).toBe(99.9);
+  });
+
+  it('AC4: rounds down so downtime never reads as 100', () => {
+    const list = [incident('a', '2026-09-01T10:00:00Z', '2026-09-01T10:50:00Z')];
+    expect(serviceUptime(list, 'api', NOW)).toBe(99.9);
+  });
+
+  it('AC5: reflects only the part of an ongoing incident inside the window', () => {
+    const list = [incident('a', '2026-06-01T00:00:00Z', null)];
+    expect(serviceUptime(list, 'api', NOW)).toBe(0);
+  });
+
+  it('AC2: computes search uptime from the fixtures', () => {
+    expect(serviceUptime(fixtureIncidents, 'search', FIXTURE_NOW)).toBe(99.5);
+  });
+
+  it('AC1: gives every listed service a percentage between 0 and 100', () => {
+    expect(services.length).toBeGreaterThan(0);
+    for (const service of services) {
+      const uptime = serviceUptime(fixtureIncidents, service.id, FIXTURE_NOW);
+      expect(uptime).toBeGreaterThanOrEqual(0);
+      expect(uptime).toBeLessThanOrEqual(100);
+    }
   });
 });

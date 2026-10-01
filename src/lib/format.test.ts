@@ -6,6 +6,8 @@ import {
   formatIncidentDuration,
   formatRange,
   formatTime,
+  formatUptime,
+  UPTIME_LABEL,
 } from './format';
 import { HOUR_MS, MINUTE_MS } from './time';
 
@@ -69,5 +71,19 @@ describe('formatDuration', () => {
 describe('formatIncidentDuration', () => {
   it('measures between two instants', () => {
     expect(formatIncidentDuration('2026-08-19T13:02:00Z', '2026-08-19T16:08:00Z')).toBe('3h 6m');
+  });
+});
+
+describe('formatUptime', () => {
+  it('AC4: always shows one decimal', () => {
+    expect(formatUptime(100)).toBe('100.0%');
+    expect(formatUptime(99.5)).toBe('99.5%');
+    expect(formatUptime(99)).toBe('99.0%');
+  });
+});
+
+describe('UPTIME_LABEL', () => {
+  it('AC4: says the figure covers the last 90 days', () => {
+    expect(UPTIME_LABEL).toContain('90 days');
   });
 });
