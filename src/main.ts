@@ -200,8 +200,9 @@ function renderDetails(): void {
 function renderSummary(): void {
   const enabled = state.flags.filter((f) => f.enabled).length;
   const degraded = state.flags.filter((f) => health(rateFor(f.key)) === 'degraded').length;
+  const atRisk = state.flags.filter((f) => compareGroups(metricsFor(f.key)).canaryAtRisk).length;
   byId('summary').textContent =
-    `${state.flags.length} flags, ${enabled} enabled, ${degraded} degraded`;
+    `${state.flags.length} flags, ${enabled} enabled, ${degraded} degraded, ${atRisk} canary at risk`;
 }
 
 function renderRows(): void {

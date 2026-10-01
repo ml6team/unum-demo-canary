@@ -9,8 +9,8 @@ src/
   lib/          pure logic, no DOM access. Every module has a *.test.ts next to it.
     types.ts    Flag, User, Counts, FlagMetrics, MetricsSnapshot
     flags.ts    isEnabled(flag, userId), exposedUsers, setEnabled
-    metrics.ts  errorRate, combined, health, DEGRADED_THRESHOLD
-    format.ts   number, percentage and date formatting
+    metrics.ts  errorRate, combined, health, compareGroups, DEGRADED_THRESHOLD
+    format.ts   number, percentage, percentage-point and date formatting
   data/         JSON fixtures and their typed exports (index.ts)
     flags.json    flag definitions
     users.json    100 users, user-000 to user-099, with a plan tier
