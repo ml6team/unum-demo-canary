@@ -26,3 +26,34 @@ export function health(rate: number | null): Health {
   if (rate === null) return 'no-traffic';
   return rate >= DEGRADED_THRESHOLD ? 'degraded' : 'healthy';
 }
+
+export interface GroupStats {
+  counts: Counts;
+  rate: number | null;
+  health: Health;
+}
+
+export interface GroupComparison {
+  canary: GroupStats;
+  baseline: GroupStats;
+  /** Canary rate minus baseline rate, as a fraction; null when either group has no traffic. */
+  delta: number | null;
+  /** The canary group is degraded and the baseline group is not. */
+  canaryAtRisk: boolean;
+}
+
+function groupStats(counts: Counts): GroupStats {
+  const rate = errorRate(counts);
+  return { counts, rate, health: health(rate) };
+}
+
+export function compareGroups(metrics: FlagMetrics): GroupComparison {
+  const canary = groupStats(metrics.canary);
+  const baseline = groupStats(metrics.baseline);
+  return {
+    canary,
+    baseline,
+    delta: canary.rate === null || baseline.rate === null ? null : canary.rate - baseline.rate,
+    canaryAtRisk: canary.health === 'degraded' && baseline.health !== 'degraded',
+  };
+}
