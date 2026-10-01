@@ -60,6 +60,11 @@ describe('fixtures', () => {
     for (const s of services) expect(s.status !== 'operational').toBe(affected.has(s.id));
   });
 
+  it('AC1, AC2: affects every service with at least one incident, so each filter option has content', () => {
+    const affected = new Set(incidents.flatMap((i) => i.affectedServiceIds));
+    for (const s of services) expect(affected).toContain(s.id);
+  });
+
   it('covers the edge cases a daily view has to handle', () => {
     const past = incidents.filter((i) => incidentState(i, NOW) === 'resolved');
     const spansMidnight = past.some(

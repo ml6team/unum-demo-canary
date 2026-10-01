@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
   affectedServiceNames,
+  filterByServices,
   groupByDay,
   historyStart,
   incidentState,
@@ -153,5 +154,61 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('filterByServices', () => {
+  const apiOnly = incident('api-only', '2026-09-30T06:10:00Z', '2026-09-30T06:55:00Z');
+  const apiWeb = incident('api-web', '2026-09-29T06:10:00Z', '2026-09-29T06:55:00Z', {
+    affectedServiceIds: ['api', 'web'],
+  });
+  const gitOnly = incident('git-only', '2026-09-28T06:10:00Z', '2026-09-28T06:55:00Z', {
+    affectedServiceIds: ['git'],
+  });
+  const maintenance = incident('maint', '2026-09-27T06:10:00Z', '2026-09-27T06:55:00Z', {
+    kind: 'maintenance',
+    affectedServiceIds: ['web'],
+  });
+  const all = [apiOnly, apiWeb, gitOnly, maintenance];
+
+  it('AC3: returns every incident in the same order for an empty selection', () => {
+    expect(filterByServices(all, []).map((i) => i.id)).toEqual([
+      'api-only',
+      'api-web',
+      'git-only',
+      'maint',
+    ]);
+  });
+
+  it('AC2: keeps only incidents that list the selected service', () => {
+    expect(filterByServices(all, ['git']).map((i) => i.id)).toEqual(['git-only']);
+  });
+
+  it('AC2: keeps an incident when only one of its services is selected', () => {
+    expect(filterByServices([apiWeb], ['web'])).toEqual([apiWeb]);
+  });
+
+  it('AC2: keeps the union of incidents when several services are selected', () => {
+    expect(filterByServices(all, ['api', 'git']).map((i) => i.id)).toEqual([
+      'api-only',
+      'api-web',
+      'git-only',
+    ]);
+  });
+
+  it('AC2: filters maintenance like an incident', () => {
+    expect(filterByServices(all, ['web']).map((i) => i.id)).toEqual(['api-web', 'maint']);
+    expect(filterByServices([maintenance], ['api'])).toEqual([]);
+  });
+
+  it('AC4: returns an empty list when the selection matches nothing', () => {
+    expect(filterByServices(all, ['unknown'])).toEqual([]);
+  });
+
+  it('AC2, AC3: does not mutate the input array', () => {
+    const input = [...all];
+    filterByServices(input, ['git']);
+    filterByServices(input, []);
+    expect(input).toEqual(all);
   });
 });
