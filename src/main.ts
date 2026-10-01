@@ -1,16 +1,18 @@
 import './style.css';
 import { flags as initialFlags, metrics, users } from './data';
 import { exposedUsers, setEnabled } from './lib/flags';
-import { formatCount, formatDate, formatRate } from './lib/format';
+import { formatCount, formatDate, formatPoints, formatRate } from './lib/format';
 import {
   combined,
+  compareGroups,
   DEGRADED_THRESHOLD,
   EMPTY_METRICS,
   errorRate,
   type Health,
   health,
+  type Verdict,
 } from './lib/metrics';
-import type { Flag } from './lib/types';
+import type { Counts, Flag } from './lib/types';
 
 interface State {
   flags: Flag[];
@@ -26,6 +28,13 @@ const HEALTH_LABEL: Record<Health, string> = {
   healthy: 'Healthy',
   degraded: 'Degraded',
   'no-traffic': 'No traffic',
+};
+
+const VERDICT_LABEL: Record<Verdict, string> = {
+  'canary-worse': 'Canary worse',
+  'canary-better': 'Canary better',
+  similar: 'Similar',
+  'no-data': 'No data',
 };
 
 type Child = Node | string;
@@ -59,6 +68,10 @@ function healthPill(value: Health): HTMLElement {
   return el('span', { class: `pill pill-${value}` }, [HEALTH_LABEL[value]]);
 }
 
+function verdictPill(value: Verdict): HTMLElement {
+  return el('span', { class: `pill pill-${value}` }, [VERDICT_LABEL[value]]);
+}
+
 function flagSwitch(flag: Flag): HTMLButtonElement {
   const button = el('button', {
     type: 'button',
@@ -75,6 +88,7 @@ function flagSwitch(flag: Flag): HTMLButtonElement {
 function flagRow(flag: Flag): HTMLTableRowElement {
   const rate = rateFor(flag.key);
   const selected = flag.key === state.selectedKey;
+  const verdict = compareGroups(metricsFor(flag.key)).verdict;
   return el('tr', { 'data-key': flag.key, class: selected ? 'is-selected' : '' }, [
     el('td', { class: 'col-flag' }, [
       el(
@@ -88,7 +102,10 @@ function flagRow(flag: Flag): HTMLTableRowElement {
         },
         [flag.key],
       ),
-      el('span', { class: 'flag-description' }, [flag.description]),
+      el('span', { class: 'flag-description' }, [
+        flag.description,
+        ...(verdict === 'canary-worse' ? [verdictPill(verdict)] : []),
+      ]),
     ]),
     el('td', { class: 'col-owner' }, [flag.owner]),
     el('td', { class: 'col-rate' }, [
@@ -109,6 +126,15 @@ function stat(label: string, value: Child, hint?: string): HTMLElement {
   ]);
 }
 
+function groupRow(label: string, counts: Counts, rate: number | null): HTMLTableRowElement {
+  return el('tr', {}, [
+    el('th', { scope: 'row' }, [label]),
+    el('td', {}, [formatCount(counts.requests)]),
+    el('td', {}, [formatCount(counts.errors)]),
+    el('td', {}, [formatRate(rate)]),
+  ]);
+}
+
 function renderDetails(): void {
   const container = byId('details');
   const flag = state.flags.find((f) => f.key === state.selectedKey);
@@ -119,6 +145,8 @@ function renderDetails(): void {
   const totals = combined(metricsFor(flag.key));
   const rate = errorRate(totals);
   const exposed = exposedUsers(flag, users);
+  const groups = metricsFor(flag.key);
+  const comparison = compareGroups(groups);
 
   container.replaceChildren(
     el('div', { class: 'details-head' }, [
@@ -145,6 +173,26 @@ function renderDetails(): void {
     el('div', { class: 'details-health' }, [
       healthPill(health(rate)),
       el('span', { class: 'muted' }, [`Degraded at ${formatRate(DEGRADED_THRESHOLD)} or more`]),
+    ]),
+    el('h3', { class: 'section-title' }, ['Canary vs baseline']),
+    el('table', { class: 'groups' }, [
+      el('thead', {}, [
+        el('tr', {}, [
+          el('th', { scope: 'col' }, ['Group']),
+          el('th', { scope: 'col' }, ['Requests']),
+          el('th', { scope: 'col' }, ['Errors']),
+          el('th', { scope: 'col' }, ['Error rate']),
+        ]),
+      ]),
+      el('tbody', {}, [
+        groupRow('Canary', groups.canary, comparison.canary),
+        groupRow('Baseline', groups.baseline, comparison.baseline),
+      ]),
+    ]),
+    el('div', { class: 'details-health' }, [
+      verdictPill(comparison.verdict),
+      el('span', { class: 'delta' }, [formatPoints(comparison.delta)]),
+      el('span', { class: 'muted' }, ['canary minus baseline']),
     ]),
   );
 }

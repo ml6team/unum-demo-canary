@@ -17,6 +17,8 @@
   --degraded-text: #8a4b06;
   --idle-bg: #eef0f3;
   --idle-text: #5d6573;
+  --canary-worse-bg: #fde8e6;
+  --canary-worse-text: #9b1c14;
   --shadow: 0 1px 2px rgb(16 24 40 / 0.05);
   --radius: 10px;
   --font-sans:
@@ -45,6 +47,8 @@
     --degraded-text: #f5b65b;
     --idle-bg: #222831;
     --idle-text: #9aa3b2;
+    --canary-worse-bg: #3a1411;
+    --canary-worse-text: #ff9b92;
     --shadow: none;
     color-scheme: dark;
   }
@@ -316,6 +320,26 @@ button {
   color: var(--idle-text);
 }
 
+.pill-canary-worse {
+  background: var(--canary-worse-bg);
+  color: var(--canary-worse-text);
+}
+
+.pill-canary-better {
+  background: var(--healthy-bg);
+  color: var(--healthy-text);
+}
+
+.pill-similar,
+.pill-no-data {
+  background: var(--idle-bg);
+  color: var(--idle-text);
+}
+
+.flag-description .pill {
+  margin-left: 8px;
+}
+
 /* Switch */
 
 .switch {
@@ -454,7 +478,46 @@ button {
   letter-spacing: -0.01em;
 }
 
+.groups {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.details .groups tbody tr td,
+.details .groups tr th {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+
+.details .groups tr th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.details .groups tbody tr td:last-child {
+  padding-right: 0;
+}
+
+.details .groups thead tr th {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.details .groups tbody tr th {
+  font-weight: 600;
+}
+
+.delta {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .details-health {
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   gap: 10px;
