@@ -364,6 +364,24 @@ a {
   font-size: 13px;
 }
 
+.service-figures {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.service-uptime {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.service-uptime-label {
+  font-size: 12px;
+}
+
 .status {
   display: inline-flex;
   flex: none;

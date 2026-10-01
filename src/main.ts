@@ -1,12 +1,19 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentDuration,
+  formatRange,
+  formatUptime,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
   groupByDay,
   incidentState,
   pastIncidents,
+  serviceUptime,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
@@ -87,9 +94,15 @@ function serviceRow(service: Service): HTMLLIElement {
       el('h3', { class: 'service-name' }, [service.name]),
       el('p', { class: 'service-description' }, [service.description]),
     ]),
-    el('span', { class: `status tone-${service.status}` }, [
-      icon(service.status),
-      STATUS_LABEL[service.status],
+    el('div', { class: 'service-figures' }, [
+      el('span', { class: 'service-uptime' }, [
+        formatUptime(serviceUptime(service, incidents, NOW)),
+        el('span', { class: 'service-uptime-label' }, [' 90-day uptime']),
+      ]),
+      el('span', { class: `status tone-${service.status}` }, [
+        icon(service.status),
+        STATUS_LABEL[service.status],
+      ]),
     ]),
   ]);
 }
