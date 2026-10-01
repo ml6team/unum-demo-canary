@@ -6,10 +6,11 @@ import {
   historyStart,
   incidentState,
   pastIncidents,
+  serviceUptime,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './incidents';
-import type { Incident } from './types';
+import type { Incident, Service } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
 
@@ -153,5 +154,118 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('serviceUptime', () => {
+  const api: Service = { id: 'api', name: 'API', description: '', status: 'operational' };
+  const web: Service = { id: 'web', name: 'Web app', description: '', status: 'operational' };
+  const outage = (id: string, startedAt: string, resolvedAt: string | null, extra = {}) =>
+    incident(id, startedAt, resolvedAt, { impact: 'partial-outage', ...extra });
+
+  it('AC2: reports the share of the 90 days without an outage, to two decimals', () => {
+    const list = [outage('a', '2026-09-01T10:00:00Z', '2026-09-01T11:30:00Z')];
+    expect(serviceUptime(api, list, NOW)).toBe(99.93);
+  });
+
+  it('AC2: counts a major outage as downtime', () => {
+    const list = [
+      outage('a', '2026-09-01T10:00:00Z', '2026-09-01T11:30:00Z', { impact: 'major-outage' }),
+    ];
+    expect(serviceUptime(api, list, NOW)).toBe(99.93);
+  });
+
+  it('AC2: truncates instead of rounding, so a 1 minute outage is not shown as 100', () => {
+    const list = [outage('a', '2026-09-01T10:00:00Z', '2026-09-01T10:01:00Z')];
+    expect(serviceUptime(api, list, NOW)).toBe(99.99);
+  });
+
+  it('AC2: counts an incident that spans UTC midnight in full', () => {
+    const list = [outage('a', '2026-09-10T22:40:00Z', '2026-09-11T01:15:00Z')];
+    expect(serviceUptime(api, list, NOW)).toBe(99.88);
+  });
+
+  it('AC2: only counts the part of an incident that falls inside the window', () => {
+    const list = [outage('a', '2026-07-03T06:00:00Z', '2026-07-03T13:00:00Z')];
+    expect(serviceUptime(api, list, NOW)).toBe(99.95);
+  });
+
+  it('AC2: counts overlapping outages once', () => {
+    const list = [
+      outage('a', '2026-09-01T10:00:00Z', '2026-09-01T11:00:00Z'),
+      outage('b', '2026-09-01T10:30:00Z', '2026-09-01T11:30:00Z'),
+    ];
+    expect(serviceUptime(api, list, NOW)).toBe(99.93);
+  });
+
+  it('AC2: does not count degraded impact or maintenance as downtime', () => {
+    const list = [
+      incident('a', '2026-09-01T10:00:00Z', '2026-09-01T14:00:00Z'),
+      outage('m', '2026-09-02T10:00:00Z', '2026-09-02T14:00:00Z', { kind: 'maintenance' }),
+    ];
+    expect(serviceUptime(api, list, NOW)).toBe(100);
+  });
+
+  it('AC2: ignores incidents that start after now', () => {
+    const list = [outage('a', '2026-10-02T10:00:00Z', '2026-10-02T12:00:00Z')];
+    expect(serviceUptime(api, list, NOW)).toBe(100);
+  });
+
+  it('AC3: an outage on api does not change the figure of web', () => {
+    const list = [outage('a', '2026-09-01T10:00:00Z', '2026-09-01T11:30:00Z')];
+    expect(serviceUptime(web, list, NOW)).toBe(100);
+  });
+
+  it('AC3: an outage that affects several services counts for each of them', () => {
+    const list = [
+      outage('a', '2026-09-01T10:00:00Z', '2026-09-01T11:30:00Z', {
+        affectedServiceIds: ['api', 'web'],
+      }),
+    ];
+    expect(serviceUptime(api, list, NOW)).toBe(99.93);
+    expect(serviceUptime(web, list, NOW)).toBe(99.93);
+  });
+
+  it('AC4: is 100 for a service with no incidents', () => {
+    expect(serviceUptime(api, [], NOW)).toBe(100);
+  });
+
+  it('AC4: calculates over the days with data when history is shorter than 90 days', () => {
+    const tracked: Service = { ...api, trackedSince: '2026-09-21T12:00:00Z' };
+    const list = [outage('a', '2026-09-25T00:00:00Z', '2026-09-26T00:00:00Z')];
+    expect(serviceUptime(tracked, list, NOW)).toBe(90);
+  });
+
+  it('AC4: is 100, not an error, when history starts at or after now', () => {
+    const tracked: Service = { ...api, trackedSince: '2026-10-02T00:00:00Z' };
+    expect(serviceUptime(tracked, [], NOW)).toBe(100);
+    expect(serviceUptime({ ...api, trackedSince: NOW.toISOString() }, [], NOW)).toBe(100);
+  });
+
+  it('AC4: ignores a trackedSince that is older than the window', () => {
+    const tracked: Service = { ...api, trackedSince: '2025-01-01T00:00:00Z' };
+    const list = [outage('a', '2026-09-01T10:00:00Z', '2026-09-01T11:30:00Z')];
+    expect(serviceUptime(tracked, list, NOW)).toBe(99.93);
+  });
+
+  it('AC5: counts an open outage up to now', () => {
+    const list = [outage('a', '2026-10-01T06:00:00Z', null)];
+    expect(serviceUptime(api, list, NOW)).toBe(99.72);
+  });
+
+  it('AC5: counts an open outage on a service with a short history', () => {
+    const tracked: Service = { ...api, trackedSince: '2026-09-30T12:00:00Z' };
+    const list = [outage('a', '2026-10-01T00:00:00Z', null)];
+    expect(serviceUptime(tracked, list, NOW)).toBe(50);
+  });
+
+  it('AC5: does not count an open degraded incident', () => {
+    const list = [incident('a', '2026-10-01T06:00:00Z', null)];
+    expect(serviceUptime(api, list, NOW)).toBe(100);
+  });
+
+  it('AC2: accepts a shorter window', () => {
+    const list = [outage('a', '2026-09-30T12:00:00Z', '2026-10-01T00:00:00Z')];
+    expect(serviceUptime(api, list, NOW, 2)).toBe(75);
   });
 });

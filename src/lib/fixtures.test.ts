@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
-import { activeIncidents, historyStart, incidentState } from './incidents';
+import { activeIncidents, historyStart, incidentState, serviceUptime } from './incidents';
 import { STATUS_LABEL } from './status';
 import { utcDayKey } from './time';
 
@@ -69,5 +69,33 @@ describe('fixtures', () => {
     expect(past.some((i) => i.kind === 'maintenance')).toBe(true);
     expect(past.some((i) => i.affectedServiceIds.length > 1)).toBe(true);
     expect(incidents.some((i) => incidentState(i, NOW) === 'upcoming')).toBe(true);
+  });
+
+  it('AC1: has an uptime between 0 and 100 for every service', () => {
+    for (const s of services) {
+      const uptime = serviceUptime(s, incidents, NOW);
+      expect(uptime).toBeGreaterThanOrEqual(0);
+      expect(uptime).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('AC2, AC3: computes each service independently from partial and major outages', () => {
+    const uptime = Object.fromEntries(
+      services.map((s) => [s.id, serviceUptime(s, incidents, NOW)]),
+    );
+    expect(uptime).toEqual({
+      api: 99.98,
+      web: 99.96,
+      git: 99.97,
+      webhooks: 99.85,
+      notifications: 100,
+      search: 99.76,
+    });
+  });
+
+  it('AC4: shows exactly 100 for a service without outages', () => {
+    const notifications = services.find((s) => s.id === 'notifications');
+    if (!notifications) throw new Error('missing fixture service');
+    expect(serviceUptime(notifications, incidents, NOW)).toBe(100);
   });
 });
