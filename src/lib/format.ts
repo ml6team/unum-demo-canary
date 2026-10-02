@@ -49,3 +49,10 @@ export function formatDuration(ms: number): string {
 export function formatIncidentDuration(start: string, end: string): string {
   return formatDuration(durationMs(start, end));
 }
+
+/** "100%" for a full ratio, otherwise the percentage rounded down to two decimals: "99.58%". */
+export function formatUptime(ratio: number): string {
+  if (ratio === 1) return '100%';
+  const hundredths = Math.min(9999, Math.floor(Math.round(ratio * 1e6) / 100));
+  return `${(hundredths / 100).toFixed(2)}%`;
+}
