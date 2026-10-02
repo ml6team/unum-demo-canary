@@ -663,6 +663,57 @@ a {
   color: var(--text-muted);
 }
 
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 16px;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.filter-legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+.filter-options {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.filter-option {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.filter-clear {
+  padding: 4px 12px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.filter-clear:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.filter-clear:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
 @media (max-width: 600px) {
   .container {
     padding-right: 16px;
