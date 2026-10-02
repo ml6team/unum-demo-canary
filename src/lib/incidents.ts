@@ -138,3 +138,20 @@ export function uptimePercent(
   const window = now.getTime() - from;
   return Math.floor(((window - affected) * 10000) / window) / 100;
 }
+
+/** Services that are affected by at least one of the incidents, in the order of `services`. */
+export function servicesWithIncidents(incidents: Incident[], services: Service[]): Service[] {
+  const affected = new Set(incidents.flatMap((i) => i.affectedServiceIds));
+  return services.filter((s) => affected.has(s.id));
+}
+
+/**
+ * Incidents that affect at least one of the selected services. An empty selection returns
+ * all incidents. Keeps the input order. Unknown ids match nothing.
+ */
+export function filterByServices(incidents: Incident[], selectedServiceIds: string[]): Incident[] {
+  if (selectedServiceIds.length === 0) return incidents;
+  return incidents.filter((i) =>
+    i.affectedServiceIds.some((id) => selectedServiceIds.includes(id)),
+  );
+}
