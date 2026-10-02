@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
-import { activeIncidents, historyStart, incidentState } from './incidents';
+import {
+  activeIncidents,
+  dailyBars,
+  historyStart,
+  incidentState,
+  uptimePercent,
+} from './incidents';
 import { STATUS_LABEL } from './status';
 import { utcDayKey } from './time';
 
@@ -69,5 +75,20 @@ describe('fixtures', () => {
     expect(past.some((i) => i.kind === 'maintenance')).toBe(true);
     expect(past.some((i) => i.affectedServiceIds.length > 1)).toBe(true);
     expect(incidents.some((i) => incidentState(i, NOW) === 'upcoming')).toBe(true);
+  });
+
+  it('AC1 to AC5: derives per-service bars and uptime from the fixtures', () => {
+    const barOn = (serviceId: string, day: string) =>
+      dailyBars(incidents, serviceId, NOW).find((b) => b.day === day)?.status;
+    expect(barOn('search', '2026-09-10')).toBe('partial-outage');
+    expect(barOn('search', '2026-09-11')).toBe('partial-outage');
+    expect(barOn('search', '2026-09-12')).toBe('degraded');
+    expect(barOn('search', '2026-09-14')).toBe('operational');
+    expect(barOn('webhooks', '2026-08-27')).toBe('operational');
+    expect(barOn('api', '2026-08-27')).toBe('partial-outage');
+    expect(barOn('web', '2026-08-27')).toBe('partial-outage');
+    expect(uptimePercent(incidents, 'search', NOW)).toBe(99.56);
+    expect(uptimePercent(incidents, 'webhooks', NOW)).toBe(99.83);
+    for (const s of services) expect(uptimePercent(incidents, s.id, NOW)).toBeLessThan(100);
   });
 });
