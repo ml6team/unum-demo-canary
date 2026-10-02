@@ -9,6 +9,7 @@ import {
   incidentState,
   pastIncidents,
   serviceUptime,
+  type TimelineItem,
   upcomingMaintenance,
   updatesNewestFirst,
   uptimeRatio,
@@ -353,6 +354,11 @@ describe('serviceUptime', () => {
 describe('buildTimeline', () => {
   const from = historyStart(NOW);
   const span = NOW.getTime() - from.getTime();
+  const first = (items: TimelineItem[]): TimelineItem => {
+    const [item] = items;
+    if (!item) throw new Error('expected an item');
+    return item;
+  };
   const fraction = (iso: string) => (Date.parse(iso) - from.getTime()) / span;
 
   it('AC1: covers the history window ending at now', () => {
@@ -373,25 +379,23 @@ describe('buildTimeline', () => {
   });
 
   it('AC2: positions an incident at the window start at 0', () => {
-    const [item] = buildTimeline(
-      [incident('a', from.toISOString(), '2026-06-03T00:00:00Z')],
-      NOW,
-    ).items;
+    const item = first(
+      buildTimeline([incident('a', from.toISOString(), '2026-07-04T01:00:00Z')], NOW).items,
+    );
     expect(item.start).toBe(0);
   });
 
   it('AC2: positions an incident at its start time as a fraction of the window', () => {
-    const [item] = buildTimeline(
-      [incident('a', '2026-08-15T10:30:00Z', '2026-08-15T11:00:00Z')],
-      NOW,
-    ).items;
+    const item = first(
+      buildTimeline([incident('a', '2026-08-15T10:30:00Z', '2026-08-15T11:00:00Z')], NOW).items,
+    );
     expect(item.start).toBeCloseTo(fraction('2026-08-15T10:30:00Z'), 12);
   });
 
   it('AC2: leaves out incidents before the window and upcoming ones', () => {
     const { items } = buildTimeline(
       [
-        incident('before', '2026-06-02T23:00:00Z', '2026-06-03T01:00:00Z'),
+        incident('before', '2026-07-03T23:00:00Z', '2026-07-04T01:00:00Z'),
         incident('upcoming', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z'),
         incident('inside', '2026-09-01T08:00:00Z', '2026-09-01T09:00:00Z'),
       ],
@@ -403,7 +407,7 @@ describe('buildTimeline', () => {
   it('AC2: lists each incident once, newest first', () => {
     const { items } = buildTimeline(
       [
-        incident('old', '2026-07-01T08:00:00Z', '2026-07-01T09:00:00Z'),
+        incident('old', '2026-07-10T08:00:00Z', '2026-07-10T09:00:00Z'),
         incident('new', '2026-09-20T08:00:00Z', '2026-09-20T09:00:00Z'),
         incident('mid', '2026-08-10T08:00:00Z', '2026-08-10T09:00:00Z'),
       ],
@@ -413,26 +417,24 @@ describe('buildTimeline', () => {
   });
 
   it('AC3: ends a resolved incident at its resolution time', () => {
-    const [item] = buildTimeline(
-      [incident('a', '2026-09-30T06:10:00Z', '2026-09-30T06:55:00Z')],
-      NOW,
-    ).items;
+    const item = first(
+      buildTimeline([incident('a', '2026-09-30T06:10:00Z', '2026-09-30T06:55:00Z')], NOW).items,
+    );
     expect(item.state).toBe('resolved');
     expect(item.end).toBeCloseTo(fraction('2026-09-30T06:55:00Z'), 12);
     expect(item.end).toBeGreaterThan(item.start);
   });
 
   it('AC3: extends an open incident to now and marks it active', () => {
-    const [item] = buildTimeline([incident('a', '2026-10-01T09:00:00Z', null)], NOW).items;
+    const item = first(buildTimeline([incident('a', '2026-10-01T09:00:00Z', null)], NOW).items);
     expect(item.state).toBe('active');
     expect(item.end).toBe(1);
   });
 
   it('AC3: clips an incident that resolves after now to now', () => {
-    const [item] = buildTimeline(
-      [incident('a', '2026-10-01T11:00:00Z', '2026-10-01T13:00:00Z')],
-      NOW,
-    ).items;
+    const item = first(
+      buildTimeline([incident('a', '2026-10-01T11:00:00Z', '2026-10-01T13:00:00Z')], NOW).items,
+    );
     expect(item.state).toBe('active');
     expect(item.end).toBe(1);
   });
@@ -443,7 +445,7 @@ describe('buildTimeline', () => {
       NOW,
     );
     expect(items).toHaveLength(1);
-    expect(items[0].end).toBeGreaterThan(items[0].start);
+    expect(first(items).end).toBeGreaterThan(first(items).start);
   });
 
   it('AC5: returns an empty timeline when there are no incidents', () => {

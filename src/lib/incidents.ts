@@ -31,6 +31,58 @@ export function pastIncidents(incidents: Incident[], now: Date, days = HISTORY_D
     .sort(newestFirst);
 }
 
+export interface TimelineItem {
+  incident: Incident;
+  /** 'active' while unresolved or until a future resolvedAt; the bar then ends at now. */
+  state: 'active' | 'resolved';
+  /** Start of the incident as a fraction of the window, 0 (window start) to 1 (now). */
+  start: number;
+  /** End as a fraction of the window; for an active incident this is 1. Always >= start. */
+  end: number;
+}
+
+export interface TimelineTick {
+  /** ISO instant at 00:00 UTC. */
+  at: string;
+  position: number;
+}
+
+export interface Timeline {
+  from: Date;
+  to: Date;
+  /** Newest first, same order as pastIncidents. */
+  items: TimelineItem[];
+  /** Day starts every 15 days from `from`, while before `to`; used for axis labels. */
+  ticks: TimelineTick[];
+}
+
+const TICK_EVERY_DAYS = 15;
+
+/** The incidents of the history window placed on a time axis from its start until `now`. */
+export function buildTimeline(incidents: Incident[], now: Date, days = HISTORY_DAYS): Timeline {
+  const from = historyStart(now, days);
+  const span = now.getTime() - from.getTime();
+  const position = (ms: number) => (ms - from.getTime()) / span;
+
+  const items = pastIncidents(incidents, now, days).map((incident): TimelineItem => {
+    const state = incidentState(incident, now) === 'active' ? 'active' : 'resolved';
+    const start = position(Date.parse(incident.startedAt));
+    const end =
+      state === 'active' || incident.resolvedAt === null
+        ? 1
+        : position(Date.parse(incident.resolvedAt));
+    return { incident, state, start, end: Math.max(start, end) };
+  });
+
+  const ticks: TimelineTick[] = [];
+  for (let day = 0; addUtcDays(from, day).getTime() < now.getTime(); day += TICK_EVERY_DAYS) {
+    const at = addUtcDays(from, day);
+    ticks.push({ at: at.toISOString(), position: position(at.getTime()) });
+  }
+
+  return { from, to: now, items, ticks };
+}
+
 export function upcomingMaintenance(incidents: Incident[], now: Date): Incident[] {
   return incidents
     .filter((i) => i.kind === 'maintenance' && incidentState(i, now) === 'upcoming')
