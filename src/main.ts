@@ -10,10 +10,12 @@ import {
 import {
   activeIncidents,
   affectedServiceNames,
+  buildTimeline,
   groupByDay,
   incidentState,
   pastIncidents,
   serviceUptime,
+  type TimelineItem,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
@@ -163,8 +165,10 @@ function affects(incident: Incident): HTMLElement {
   ]);
 }
 
-function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
-  const details = el('details', { class: `incident tone-${toneOf(incident)}` }, [
+function incidentDetails(incident: Incident, open = false, id?: string): HTMLDetailsElement {
+  const attrs: Record<string, string> = { class: `incident tone-${toneOf(incident)}` };
+  if (id) attrs.id = id;
+  const details = el('details', attrs, [
     el('summary', { class: 'incident-summary' }, [
       el('span', { class: 'incident-heading' }, [
         el('span', { class: 'incident-title' }, [incident.title]),
@@ -232,12 +236,68 @@ function renderHistory(): void {
         el(
           'div',
           { class: 'day-incidents' },
-          group.incidents.map((i) => incidentDetails(i)),
+          group.incidents.map((i) => incidentDetails(i, false, `incident-${i.id}`)),
         ),
       ]),
     ),
   );
 }
+
+function timelineRow(item: TimelineItem): HTMLLIElement {
+  const { incident } = item;
+  const open = item.state === 'active';
+  const text: Child[] = [
+    time(incident.startedAt, formatRange(incident.startedAt, incident.resolvedAt)),
+  ];
+  if (open) {
+    text.push(el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']), 'Ongoing');
+  } else if (incident.resolvedAt !== null) {
+    text.push(
+      el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']),
+      el('span', { class: 'visually-hidden' }, ['Duration ']),
+      formatIncidentDuration(incident.startedAt, incident.resolvedAt),
+    );
+  }
+  const bar = el('span', {
+    class: 'timeline-bar',
+    style: `--start:${item.start};--end:${item.end}`,
+    'aria-hidden': 'true',
+  });
+  return el('li', { class: `timeline-row tone-${toneOf(incident)}${open ? ' is-open' : ''}` }, [
+    el('div', { class: 'timeline-label' }, [
+      el('a', { class: 'timeline-link', href: `#incident-${incident.id}` }, [incident.title]),
+      badge(toneOf(incident)),
+    ]),
+    el('p', { class: 'incident-meta' }, text),
+    el('div', { class: 'timeline-track' }, [bar]),
+  ]);
+}
+
+function renderTimeline(): void {
+  const { items, ticks } = buildTimeline(incidents, NOW);
+  const axis = el(
+    'ol',
+    { class: 'timeline-axis', 'aria-hidden': 'true' },
+    ticks.map((tick) =>
+      el('li', { class: 'timeline-tick', style: `--pos:${tick.position}` }, [
+        formatDay(tick.at.slice(0, 10)),
+      ]),
+    ),
+  );
+  const rows =
+    items.length === 0
+      ? el('p', { class: 'empty' }, ['No incidents in the last 90 days.'])
+      : el('ul', { class: 'timeline-rows' }, items.map(timelineRow));
+  byId('timeline').replaceChildren(axis, rows);
+}
+
+byId('timeline').addEventListener('click', (event) => {
+  if (!(event.target instanceof Element)) return;
+  const link = event.target.closest('a.timeline-link');
+  const id = link?.getAttribute('href')?.slice(1);
+  const target = id ? document.getElementById(id) : null;
+  if (target instanceof HTMLDetailsElement) target.open = true;
+});
 
 renderOverall();
 renderActive();
@@ -247,4 +307,5 @@ byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
 );
+renderTimeline();
 renderHistory();
