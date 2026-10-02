@@ -340,6 +340,7 @@ a {
 
 .service {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -373,6 +374,34 @@ a {
   font-size: 14px;
   font-weight: 550;
   white-space: nowrap;
+}
+
+/* Uptime */
+
+.uptime {
+  flex: 0 0 100%;
+}
+
+.uptime-bars {
+  display: flex;
+  gap: 1px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.uptime-bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 1px;
+  background: var(--tone-solid);
+}
+
+.uptime-percent {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 /* Badges */

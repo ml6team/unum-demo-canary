@@ -7,11 +7,12 @@ Public status page for Northwind's services. Static site built with Vite and van
 ```
 src/
   lib/            pure logic, no DOM access. Every module has a *.test.ts next to it.
-    types.ts      Service, ServiceStatus, Impact, Incident, IncidentUpdate
+    types.ts      Service, ServiceStatus, Impact, Incident, IncidentUpdate, UptimeDay, ServiceUptime
     time.ts       UTC day helpers: utcDayKey, startOfUtcDay, addUtcDays, durationMs, DAY_MS
     status.ts     worstStatus, overallStatus, STATUS_LABEL, UPDATE_LABEL
     incidents.ts  incidentState, pastIncidents, upcomingMaintenance, activeIncidents, groupByDay
-    format.ts     day, time, range and duration formatting (always UTC)
+    uptime.ts     serviceUptime, uptimeDayLabel: per-service daily status and uptime percentage over 90 days
+    format.ts     day, time, range, duration and uptime formatting (always UTC)
     fixtures.test.ts  consistency checks on the JSON fixtures
   data/           JSON fixtures and their typed exports (index.ts)
     services.json   the six services and their current status

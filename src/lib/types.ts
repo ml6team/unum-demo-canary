@@ -41,3 +41,18 @@ export interface Incident {
   resolvedAt: string | null;
   updates: IncidentUpdate[];
 }
+
+export interface UptimeDay {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  /** Worst impact of the incidents on this day; 'operational' when there was none. */
+  status: ServiceStatus;
+  incidentIds: string[];
+}
+
+export interface ServiceUptime {
+  /** One entry per day, oldest first, the last one being the day of `now`. */
+  days: UptimeDay[];
+  /** 0 to 100, floored to two decimals; 100 only when there was no downtime. */
+  uptimePercent: number;
+}
