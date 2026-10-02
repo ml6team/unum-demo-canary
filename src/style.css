@@ -340,6 +340,7 @@ a {
 
 .service {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -362,6 +363,37 @@ a {
 .service-description {
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.service-uptime {
+  flex: 1 0 100%;
+}
+
+.uptime-bars {
+  display: flex;
+  gap: 1px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.uptime-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 1px;
+  background: var(--tone-solid);
+}
+
+.uptime-figure {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.uptime-value {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .status {

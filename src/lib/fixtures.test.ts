@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
-import { activeIncidents, historyStart, incidentState } from './incidents';
+import {
+  activeIncidents,
+  dailyStatuses,
+  historyStart,
+  incidentState,
+  serviceUptime,
+} from './incidents';
 import { STATUS_LABEL } from './status';
 import { utcDayKey } from './time';
 
@@ -69,5 +75,34 @@ describe('fixtures', () => {
     expect(past.some((i) => i.kind === 'maintenance')).toBe(true);
     expect(past.some((i) => i.affectedServiceIds.length > 1)).toBe(true);
     expect(incidents.some((i) => incidentState(i, NOW) === 'upcoming')).toBe(true);
+  });
+});
+
+describe('fixtures: 90-day uptime', () => {
+  const statusOn = (serviceId: string, day: string) =>
+    dailyStatuses(serviceId, incidents, NOW).find((d) => d.day === day)?.status;
+
+  it('AC2: colours the day of a single-service incident and not the next day', () => {
+    expect(statusOn('git', '2026-07-30')).toBe('partial-outage');
+    expect(statusOn('git', '2026-07-31')).toBe('operational');
+  });
+
+  it('AC4, AC5: colours both days of an incident that spans midnight', () => {
+    expect(statusOn('search', '2026-09-10')).toBe('partial-outage');
+    expect(statusOn('search', '2026-09-11')).toBe('partial-outage');
+  });
+
+  it('AC4: colours a service listed on a shared incident', () => {
+    expect(statusOn('api', '2026-09-13')).toBe('degraded');
+    expect(statusOn('search', '2026-09-13')).toBe('degraded');
+  });
+
+  it('AC1, AC3: gives every service 90 days and an uptime just under 100%', () => {
+    for (const s of services) {
+      const result = serviceUptime(s.id, incidents, NOW);
+      expect(result.days).toHaveLength(90);
+      expect(result.uptime).toBeGreaterThan(0.99);
+      expect(result.uptime).toBeLessThan(1);
+    }
   });
 });
