@@ -618,6 +618,37 @@ a {
   color: var(--text-muted);
 }
 
+/* Service filter */
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.filter-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.filter-select {
+  min-width: 180px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.filter-count {
+  margin-left: auto;
+  font-size: 13px;
+}
+
 @media (max-width: 600px) {
   .container {
     padding-right: 16px;
