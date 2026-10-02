@@ -1,14 +1,22 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentDuration,
+  formatRange,
+  formatUptime,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
+  dailyBars,
   groupByDay,
   incidentState,
   pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
+  uptimePercent,
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
@@ -81,6 +89,22 @@ function renderOverall(): void {
   );
 }
 
+function uptimeBars(service: Service): HTMLElement {
+  const bars = dailyBars(incidents, service.id, NOW).map(({ day, status }) => {
+    const text = `${formatDay(day)}: ${status === 'operational' ? 'No incident' : STATUS_LABEL[status]}`;
+    return el('li', { class: `uptime-bar tone-${status}`, title: text }, [
+      el('span', { class: 'visually-hidden' }, [text]),
+    ]);
+  });
+  return el('div', { class: 'uptime-chart' }, [
+    el('ol', { class: 'uptime-bars', 'aria-label': `${service.name} status, last 90 days` }, bars),
+    el('p', { class: 'uptime-caption', 'aria-hidden': 'true' }, [
+      el('span', {}, ['90 days ago']),
+      el('span', {}, ['Today']),
+    ]),
+  ]);
+}
+
 function serviceRow(service: Service): HTMLLIElement {
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-text' }, [
@@ -90,6 +114,13 @@ function serviceRow(service: Service): HTMLLIElement {
     el('span', { class: `status tone-${service.status}` }, [
       icon(service.status),
       STATUS_LABEL[service.status],
+    ]),
+    el('div', { class: 'service-uptime' }, [
+      uptimeBars(service),
+      el('p', { class: 'uptime-percent' }, [
+        el('span', { class: 'visually-hidden' }, ['Uptime, last 90 days: ']),
+        formatUptime(uptimePercent(incidents, service.id, NOW)),
+      ]),
     ]),
   ]);
 }

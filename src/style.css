@@ -340,6 +340,7 @@ a {
 
 .service {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -373,6 +374,50 @@ a {
   font-size: 14px;
   font-weight: 550;
   white-space: nowrap;
+}
+
+/* Uptime bars */
+
+.service-uptime {
+  display: flex;
+  flex-basis: 100%;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.uptime-chart {
+  flex: 1;
+  min-width: 0;
+}
+
+.uptime-bars {
+  display: flex;
+  gap: 2px;
+  height: 28px;
+}
+
+.uptime-bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 2px;
+  background: var(--tone-solid);
+}
+
+.uptime-caption {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.uptime-percent {
+  flex: none;
+  width: 64px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 28px;
+  text-align: right;
 }
 
 /* Badges */
@@ -662,6 +707,10 @@ a {
 
   .status {
     font-size: 13px;
+  }
+
+  .uptime-bars {
+    gap: 1px;
   }
 
   .incident-summary {
