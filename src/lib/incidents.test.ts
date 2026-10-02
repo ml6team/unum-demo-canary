@@ -3,15 +3,17 @@ import {
   activeIncidents,
   affectedServiceNames,
   dailyBars,
+  filterByServices,
   groupByDay,
   historyStart,
   incidentState,
   pastIncidents,
+  servicesWithIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
   uptimePercent,
 } from './incidents';
-import type { Incident } from './types';
+import type { Incident, Service } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
 
@@ -300,5 +302,83 @@ describe('uptimePercent', () => {
       incident('m', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z', { kind: 'maintenance' }),
     ];
     expect(uptimePercent(list, 'api', NOW)).toBe(100);
+  });
+});
+
+describe('servicesWithIncidents', () => {
+  const service = (id: string): Service => ({
+    id,
+    name: id,
+    description: '',
+    status: 'operational',
+  });
+  const services = [service('web'), service('api'), service('search'), service('billing')];
+
+  it('AC1: lists only services some incident affects, in service order, once each', () => {
+    const list = [
+      incident('a', '2026-09-30T06:10:00Z', '2026-09-30T06:55:00Z', {
+        affectedServiceIds: ['search', 'api'],
+      }),
+      incident('b', '2026-09-29T06:10:00Z', '2026-09-29T06:55:00Z', {
+        affectedServiceIds: ['api'],
+      }),
+    ];
+    expect(servicesWithIncidents(list, services).map((s) => s.id)).toEqual(['api', 'search']);
+  });
+
+  it('AC1: includes a service that is only affected by upcoming maintenance', () => {
+    const list = [
+      incident('m', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z', {
+        kind: 'maintenance',
+        affectedServiceIds: ['billing'],
+      }),
+    ];
+    expect(servicesWithIncidents(list, services).map((s) => s.id)).toEqual(['billing']);
+  });
+
+  it('AC1: returns no services when there are no incidents', () => {
+    expect(servicesWithIncidents([], services)).toEqual([]);
+  });
+});
+
+describe('filterByServices', () => {
+  const list = [
+    incident('a', '2026-09-30T06:10:00Z', '2026-09-30T06:55:00Z', { affectedServiceIds: ['api'] }),
+    incident('b', '2026-09-29T06:10:00Z', '2026-09-29T06:55:00Z', {
+      affectedServiceIds: ['web'],
+    }),
+    incident('c', '2026-09-28T06:10:00Z', '2026-09-28T06:55:00Z', {
+      affectedServiceIds: ['api', 'web'],
+    }),
+    incident('d', '2026-09-27T06:10:00Z', '2026-09-27T06:55:00Z', {
+      affectedServiceIds: ['search'],
+    }),
+  ];
+
+  it('AC2: keeps only incidents of the selected service', () => {
+    expect(filterByServices(list, ['search']).map((i) => i.id)).toEqual(['d']);
+  });
+
+  it('AC2: returns the union for several services, each incident once', () => {
+    expect(filterByServices(list, ['api', 'web']).map((i) => i.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('AC3: returns all incidents in the same order when nothing is selected', () => {
+    expect(filterByServices(list, []).map((i) => i.id)).toEqual(['a', 'b', 'c', 'd']);
+  });
+
+  it('AC4: clearing the selection brings the full list back', () => {
+    expect(filterByServices(list, ['search'])).toHaveLength(1);
+    expect(filterByServices(list, [])).toEqual(list);
+  });
+
+  it('AC5: a selected service without incidents matches nothing, so the history is empty', () => {
+    const none = filterByServices(list, ['billing']);
+    expect(none).toEqual([]);
+    expect(groupByDay(pastIncidents(none, NOW))).toEqual([]);
+  });
+
+  it('AC5: an unknown service id matches nothing', () => {
+    expect(filterByServices(list, ['nope'])).toEqual([]);
   });
 });

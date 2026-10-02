@@ -5,6 +5,7 @@ import {
   dailyBars,
   historyStart,
   incidentState,
+  servicesWithIncidents,
   uptimePercent,
 } from './incidents';
 import { STATUS_LABEL } from './status';
@@ -90,5 +91,9 @@ describe('fixtures', () => {
     expect(uptimePercent(incidents, 'search', NOW)).toBe(99.56);
     expect(uptimePercent(incidents, 'webhooks', NOW)).toBe(99.83);
     for (const s of services) expect(uptimePercent(incidents, s.id, NOW)).toBeLessThan(100);
+  });
+
+  it('AC1: offers every service in the incident filter', () => {
+    expect(servicesWithIncidents(incidents, services)).toEqual(services);
   });
 });
