@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
   affectedServiceNames,
+  dailyBars,
   groupByDay,
   historyStart,
   incidentState,
   pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
+  uptimePercent,
 } from './incidents';
 import type { Incident } from './types';
 
@@ -153,5 +155,150 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+function barOn(bars: ReturnType<typeof dailyBars>, day: string) {
+  return bars.find((b) => b.day === day)?.status;
+}
+
+describe('dailyBars', () => {
+  it('AC1: returns 90 ascending UTC days from the window start to today, all operational without incidents', () => {
+    const bars = dailyBars([], 'api', NOW);
+    expect(bars).toHaveLength(90);
+    expect(bars[0]?.day).toBe('2026-07-04');
+    expect(bars.at(-1)?.day).toBe('2026-10-01');
+    expect(bars.map((b) => b.day)).toEqual([...bars.map((b) => b.day)].sort());
+    expect(bars.every((b) => b.status === 'operational')).toBe(true);
+  });
+
+  it('AC2: colours a day by its incident impact', () => {
+    const list = [incident('a', '2026-09-09T09:12:00Z', '2026-09-09T11:47:00Z')];
+    const bars = dailyBars(list, 'api', NOW);
+    expect(barOn(bars, '2026-09-09')).toBe('degraded');
+    expect(barOn(bars, '2026-09-08')).toBe('operational');
+    expect(barOn(bars, '2026-09-10')).toBe('operational');
+  });
+
+  it('AC2: the most severe incident of the day wins', () => {
+    const list = [
+      incident('a', '2026-09-09T09:12:00Z', '2026-09-09T11:47:00Z'),
+      incident('b', '2026-09-09T15:00:00Z', '2026-09-09T16:00:00Z', { impact: 'major-outage' }),
+      incident('c', '2026-09-09T18:00:00Z', '2026-09-09T18:30:00Z', { impact: 'partial-outage' }),
+    ];
+    expect(barOn(dailyBars(list, 'api', NOW), '2026-09-09')).toBe('major-outage');
+  });
+
+  it('AC2: the four statuses map to four distinct bar values', () => {
+    const list = [
+      incident('a', '2026-09-01T09:00:00Z', '2026-09-01T10:00:00Z', { impact: 'degraded' }),
+      incident('b', '2026-09-02T09:00:00Z', '2026-09-02T10:00:00Z', { impact: 'partial-outage' }),
+      incident('c', '2026-09-03T09:00:00Z', '2026-09-03T10:00:00Z', { impact: 'major-outage' }),
+    ];
+    const bars = dailyBars(list, 'api', NOW);
+    const values = ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04'].map((d) =>
+      barOn(bars, d),
+    );
+    expect(new Set(values).size).toBe(4);
+  });
+
+  it('AC5: an incident across midnight colours both days', () => {
+    const list = [
+      incident('a', '2026-09-10T22:40:00Z', '2026-09-11T01:15:00Z', { impact: 'partial-outage' }),
+    ];
+    const bars = dailyBars(list, 'api', NOW);
+    expect(barOn(bars, '2026-09-10')).toBe('partial-outage');
+    expect(barOn(bars, '2026-09-11')).toBe('partial-outage');
+    expect(barOn(bars, '2026-09-12')).toBe('operational');
+  });
+
+  it('AC5: an incident ending exactly at midnight does not colour the next day', () => {
+    const list = [incident('a', '2026-09-10T22:00:00Z', '2026-09-11T00:00:00Z')];
+    const bars = dailyBars(list, 'api', NOW);
+    expect(barOn(bars, '2026-09-10')).toBe('degraded');
+    expect(barOn(bars, '2026-09-11')).toBe('operational');
+  });
+
+  it('AC5: a three-day incident colours three bars', () => {
+    const list = [incident('a', '2026-09-10T20:00:00Z', '2026-09-12T04:00:00Z')];
+    const colored = dailyBars(list, 'api', NOW).filter((b) => b.status !== 'operational');
+    expect(colored.map((b) => b.day)).toEqual(['2026-09-10', '2026-09-11', '2026-09-12']);
+  });
+
+  it('AC5: an open incident colours today', () => {
+    const list = [incident('a', '2026-10-01T11:00:00Z', null, { impact: 'major-outage' })];
+    const bars = dailyBars(list, 'api', NOW);
+    expect(bars.at(-1)).toEqual({ day: '2026-10-01', status: 'major-outage' });
+    expect(barOn(bars, '2026-09-30')).toBe('operational');
+  });
+
+  it('AC4: only the bars of the affected services change', () => {
+    const list = [
+      incident('a', '2026-09-09T09:12:00Z', '2026-09-09T11:47:00Z', {
+        affectedServiceIds: ['web'],
+      }),
+      incident('b', '2026-09-20T09:00:00Z', '2026-09-20T10:00:00Z', {
+        affectedServiceIds: ['api', 'search'],
+      }),
+    ];
+    expect(barOn(dailyBars(list, 'api', NOW), '2026-09-09')).toBe('operational');
+    expect(barOn(dailyBars(list, 'web', NOW), '2026-09-09')).toBe('degraded');
+    expect(barOn(dailyBars(list, 'api', NOW), '2026-09-20')).toBe('degraded');
+    expect(barOn(dailyBars(list, 'search', NOW), '2026-09-20')).toBe('degraded');
+    expect(barOn(dailyBars(list, 'web', NOW), '2026-09-20')).toBe('operational');
+  });
+
+  it('AC2: upcoming maintenance changes nothing', () => {
+    const list = [
+      incident('m', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z', { kind: 'maintenance' }),
+    ];
+    expect(dailyBars(list, 'api', NOW).every((b) => b.status === 'operational')).toBe(true);
+  });
+});
+
+describe('uptimePercent', () => {
+  it('AC3: is exactly 100 without incidents', () => {
+    expect(uptimePercent([], 'api', NOW)).toBe(100);
+  });
+
+  it('AC3: one 45-minute incident gives 99.96, and a longer one gives less', () => {
+    const short = [incident('a', '2026-09-09T09:00:00Z', '2026-09-09T09:45:00Z')];
+    const long = [incident('a', '2026-09-09T09:00:00Z', '2026-09-09T15:00:00Z')];
+    expect(uptimePercent(short, 'api', NOW)).toBe(99.96);
+    expect(uptimePercent(long, 'api', NOW)).toBeLessThan(uptimePercent(short, 'api', NOW));
+    expect(uptimePercent(long, 'api', NOW)).toBe(99.72);
+  });
+
+  it('AC3: overlapping incidents on one service count once', () => {
+    const list = [
+      incident('a', '2026-09-09T09:00:00Z', '2026-09-09T10:00:00Z'),
+      incident('b', '2026-09-09T09:30:00Z', '2026-09-09T10:30:00Z', { impact: 'major-outage' }),
+    ];
+    const merged = [incident('m', '2026-09-09T09:00:00Z', '2026-09-09T10:30:00Z')];
+    expect(uptimePercent(list, 'api', NOW)).toBe(uptimePercent(merged, 'api', NOW));
+  });
+
+  it('AC5: an open incident counts up to now', () => {
+    const open = [incident('a', '2026-10-01T06:00:00Z', null)];
+    const closed = [incident('a', '2026-10-01T06:00:00Z', '2026-10-01T12:00:00Z')];
+    expect(uptimePercent(open, 'api', NOW)).toBeLessThan(100);
+    expect(uptimePercent(open, 'api', NOW)).toBe(uptimePercent(closed, 'api', NOW));
+  });
+
+  it('AC4: an incident on another service does not change the value', () => {
+    const list = [
+      incident('a', '2026-09-09T09:00:00Z', '2026-09-09T15:00:00Z', {
+        affectedServiceIds: ['web'],
+      }),
+    ];
+    expect(uptimePercent(list, 'api', NOW)).toBe(100);
+    expect(uptimePercent(list, 'web', NOW)).toBeLessThan(100);
+  });
+
+  it('AC3: ignores upcoming maintenance', () => {
+    const list = [
+      incident('m', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z', { kind: 'maintenance' }),
+    ];
+    expect(uptimePercent(list, 'api', NOW)).toBe(100);
   });
 });
