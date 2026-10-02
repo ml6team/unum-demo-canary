@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
 import {
   activeIncidents,
+  buildTimeline,
   dailyStatuses,
   historyStart,
   incidentState,
+  pastIncidents,
   serviceUptime,
 } from './incidents';
 import { STATUS_LABEL } from './status';
@@ -104,5 +106,32 @@ describe('fixtures: 90-day uptime', () => {
       expect(result.uptime).toBeGreaterThan(0.99);
       expect(result.uptime).toBeLessThan(1);
     }
+  });
+});
+
+describe('fixtures: timeline', () => {
+  const timelineItems = () => buildTimeline(incidents, NOW).items;
+
+  it('AC1, AC2: plots exactly the past incidents and not upcoming maintenance', () => {
+    expect(timelineItems().map((i) => i.incident.id)).toEqual(
+      pastIncidents(incidents, NOW).map((i) => i.id),
+    );
+    expect(timelineItems().map((i) => i.incident.id)).not.toContain(
+      'mnt-2026-10-04-search-upgrade',
+    );
+  });
+
+  it('AC3: keeps every item inside the window with a non-negative duration', () => {
+    for (const item of timelineItems()) {
+      expect(item.start).toBeGreaterThanOrEqual(0);
+      expect(item.start).toBeLessThanOrEqual(item.end);
+      expect(item.end).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('AC3: gives the incident spanning midnight a visible duration', () => {
+    const item = timelineItems().find((i) => i.incident.id === 'inc-2026-09-10-search-errors');
+    expect(item).toBeDefined();
+    expect(item?.end).toBeGreaterThan(item?.start ?? 1);
   });
 });
