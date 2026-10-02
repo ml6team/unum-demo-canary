@@ -10,7 +10,7 @@ src/
     types.ts      Service, ServiceStatus, Impact, Incident, IncidentUpdate, UptimeDay, ServiceUptime
     time.ts       UTC day helpers: utcDayKey, startOfUtcDay, addUtcDays, durationMs, DAY_MS
     status.ts     worstStatus, overallStatus, STATUS_LABEL, UPDATE_LABEL
-    incidents.ts  incidentState, pastIncidents, upcomingMaintenance, activeIncidents, groupByDay, dailyStatuses, uptimeRatio, serviceUptime
+    incidents.ts  incidentState, pastIncidents, buildTimeline, upcomingMaintenance, activeIncidents, groupByDay, dailyStatuses, uptimeRatio, serviceUptime
     format.ts     day, time, range, duration and uptime formatting (always UTC)
     fixtures.test.ts  consistency checks on the JSON fixtures
   data/           JSON fixtures and their typed exports (index.ts)

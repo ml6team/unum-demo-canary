@@ -650,6 +650,107 @@ a {
   color: var(--text-muted);
 }
 
+/* Incident timeline */
+
+#timeline {
+  padding: 14px 20px 8px;
+}
+
+.timeline-axis {
+  position: relative;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  list-style: none;
+}
+
+.timeline-tick {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--pos) * 100%);
+  padding: 0 0 4px 4px;
+  border-left: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.timeline-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-row {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.timeline-row:last-child {
+  border-bottom: 0;
+}
+
+.timeline-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.timeline-link {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.timeline-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.timeline-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.timeline-track {
+  position: relative;
+  height: 10px;
+  margin-top: 8px;
+  border-radius: 5px;
+  background: var(--border-muted);
+}
+
+.timeline-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: min(calc(var(--start) * 100%), calc(100% - 6px));
+  width: calc((var(--end) - var(--start)) * 100%);
+  min-width: 6px;
+  border-radius: 5px;
+  background: var(--tone-solid);
+}
+
+.is-open .timeline-bar {
+  background: repeating-linear-gradient(-45deg, var(--tone-solid) 0 4px, var(--tone-soft) 4px 8px);
+  border: 1px solid var(--tone-solid);
+  border-radius: 5px 0 0 5px;
+}
+
+.is-open .timeline-bar::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -7px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 8px solid var(--tone-solid);
+}
+
 @media (max-width: 600px) {
   .container {
     padding-right: 16px;
@@ -706,6 +807,15 @@ a {
 
   .timeline {
     margin: 0 16px;
+  }
+
+  #timeline {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .timeline-tick:nth-child(even) {
+    display: none;
   }
 
   .maintenance {
