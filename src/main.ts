@@ -1,12 +1,19 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentDuration,
+  formatRange,
+  formatUptime,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
   groupByDay,
   incidentState,
   pastIncidents,
+  serviceUptime,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
@@ -81,6 +88,28 @@ function renderOverall(): void {
   );
 }
 
+function uptimeBar(day: string, status: ServiceStatus): HTMLLIElement {
+  const text = `${formatDay(day)}: ${status === 'operational' ? 'No incidents' : STATUS_LABEL[status]}`;
+  return el('li', { class: `uptime-bar tone-${status}`, title: text }, [
+    el('span', { class: 'visually-hidden' }, [text]),
+  ]);
+}
+
+function uptimeBlock(service: Service): HTMLElement {
+  const { days, uptime } = serviceUptime(service.id, incidents, NOW);
+  return el('div', { class: 'service-uptime' }, [
+    el(
+      'ol',
+      { class: 'uptime-bars', 'aria-label': `${service.name} status for each of the last 90 days` },
+      days.map((d) => uptimeBar(d.day, d.status)),
+    ),
+    el('p', { class: 'uptime-figure' }, [
+      el('span', { class: 'uptime-value' }, [formatUptime(uptime)]),
+      ' 90-day uptime',
+    ]),
+  ]);
+}
+
 function serviceRow(service: Service): HTMLLIElement {
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-text' }, [
@@ -91,6 +120,7 @@ function serviceRow(service: Service): HTMLLIElement {
       icon(service.status),
       STATUS_LABEL[service.status],
     ]),
+    uptimeBlock(service),
   ]);
 }
 
