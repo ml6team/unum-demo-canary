@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest';
+import { incidents as fixtureIncidents, services as fixtureServices } from '../data';
 import {
+  ALL_SERVICES,
   activeIncidents,
   affectedServiceNames,
+  emptyHistoryMessage,
+  filterByService,
   groupByDay,
   historyStart,
+  incidentCountLabel,
   incidentState,
   pastIncidents,
+  servicesWithIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './incidents';
-import type { Incident } from './types';
+import type { Incident, Service } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
 
@@ -153,5 +159,62 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('service filter', () => {
+  const services: Service[] = [
+    { id: 'api', name: 'API', description: '', status: 'operational' },
+    { id: 'web', name: 'Web app', description: '', status: 'operational' },
+    { id: 'git', name: 'Git', description: '', status: 'operational' },
+  ];
+  const list = [
+    incident('a', '2026-09-09T09:12:00Z', null, { affectedServiceIds: ['api'] }),
+    incident('b', '2026-09-08T09:12:00Z', '2026-09-08T10:00:00Z', {
+      affectedServiceIds: ['web', 'api'],
+    }),
+    incident('c', '2026-09-07T09:12:00Z', '2026-09-07T10:00:00Z', {
+      kind: 'maintenance',
+      affectedServiceIds: ['web'],
+    }),
+  ];
+
+  it('AC1: servicesWithIncidents keeps only services some incident affects, in service order', () => {
+    expect(servicesWithIncidents(list, services).map((s) => s.id)).toEqual(['api', 'web']);
+  });
+
+  it('AC2: filterByService keeps incidents affecting the service, including multi-service ones', () => {
+    expect(filterByService(list, 'api').map((i) => i.id)).toEqual(['a', 'b']);
+    expect(filterByService(list, 'web').map((i) => i.id)).toEqual(['b', 'c']);
+  });
+
+  it('AC3: filterByService with ALL_SERVICES returns every incident again after a service', () => {
+    expect(ALL_SERVICES).toBe('all');
+    expect(filterByService(list, 'web')).toHaveLength(2);
+    expect(filterByService(list, ALL_SERVICES)).toEqual(list);
+  });
+
+  it('AC4: filterByService returns an empty list for a service without incidents', () => {
+    expect(filterByService(list, 'git')).toEqual([]);
+  });
+
+  it('AC4: emptyHistoryMessage names the service, or all services for null', () => {
+    expect(emptyHistoryMessage(null)).toBe('No incidents reported in the last 90 days.');
+    expect(emptyHistoryMessage('Git')).toBe('No incidents reported for Git in the last 90 days.');
+  });
+
+  it('AC5: incidentCountLabel pluralises the count', () => {
+    expect(incidentCountLabel(0)).toBe('0 incidents');
+    expect(incidentCountLabel(1)).toBe('1 incident');
+    expect(incidentCountLabel(2)).toBe('2 incidents');
+  });
+
+  it('AC2, AC5: filtered count per fixture service matches the incidents that affect it', () => {
+    for (const service of fixtureServices) {
+      const expected = fixtureIncidents.filter((i) =>
+        i.affectedServiceIds.includes(service.id),
+      ).length;
+      expect(filterByService(fixtureIncidents, service.id)).toHaveLength(expected);
+    }
   });
 });
