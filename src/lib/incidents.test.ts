@@ -172,8 +172,8 @@ describe('dailyStatuses', () => {
   it('AC1: returns 90 ascending days, oldest first, ending on the day of now', () => {
     const days = dailyStatuses('api', [], NOW);
     expect(days).toHaveLength(90);
-    expect(days[0].day).toBe('2026-07-04');
-    expect(days[89].day).toBe('2026-10-01');
+    expect(days.at(0)?.day).toBe('2026-07-04');
+    expect(days.at(-1)?.day).toBe('2026-10-01');
     const keys = days.map((d) => d.day);
     expect(keys).toEqual([...keys].sort());
     expect(new Set(keys).size).toBe(90);
