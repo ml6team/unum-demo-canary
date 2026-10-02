@@ -65,3 +65,28 @@ export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
 export function affectedServiceNames(incident: Incident, services: Service[]): string[] {
   return services.filter((s) => incident.affectedServiceIds.includes(s.id)).map((s) => s.name);
 }
+
+export const ALL_SERVICES = 'all';
+
+/** Services that appear in at least one incident, in the order `services` lists them. */
+export function servicesWithIncidents(incidents: Incident[], services: Service[]): Service[] {
+  const ids = new Set(incidents.flatMap((i) => i.affectedServiceIds));
+  return services.filter((s) => ids.has(s.id));
+}
+
+/** All incidents when serviceId is ALL_SERVICES, else those whose affectedServiceIds include it. */
+export function filterByService(incidents: Incident[], serviceId: string): Incident[] {
+  if (serviceId === ALL_SERVICES) return incidents;
+  return incidents.filter((i) => i.affectedServiceIds.includes(serviceId));
+}
+
+export function incidentCountLabel(count: number): string {
+  return count === 1 ? '1 incident' : `${count} incidents`;
+}
+
+/** Empty-state text for the history list, for one service or (null) for all of them. */
+export function emptyHistoryMessage(serviceName: string | null): string {
+  return serviceName === null
+    ? `No incidents reported in the last ${HISTORY_DAYS} days.`
+    : `No incidents reported for ${serviceName} in the last ${HISTORY_DAYS} days.`;
+}
