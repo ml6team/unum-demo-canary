@@ -1,6 +1,12 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentDuration,
+  formatRange,
+  formatUptime,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
@@ -12,6 +18,7 @@ import {
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
+import { describeUptimeDay, uptimeDays, uptimePercent } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -81,6 +88,27 @@ function renderOverall(): void {
   );
 }
 
+function uptimeBars(service: Service): HTMLOListElement {
+  return el(
+    'ol',
+    { class: 'uptime-bars', 'aria-label': `${service.name}, last 90 days` },
+    uptimeDays(service.id, incidents, NOW).map((day) => {
+      const text = describeUptimeDay(day);
+      return el(
+        'li',
+        {
+          class: `uptime-bar tone-${day.status}`,
+          tabindex: '0',
+          role: 'img',
+          'aria-label': text,
+          'data-tip': text,
+        },
+        [],
+      );
+    }),
+  );
+}
+
 function serviceRow(service: Service): HTMLLIElement {
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-text' }, [
@@ -90,6 +118,10 @@ function serviceRow(service: Service): HTMLLIElement {
     el('span', { class: `status tone-${service.status}` }, [
       icon(service.status),
       STATUS_LABEL[service.status],
+    ]),
+    uptimeBars(service),
+    el('span', { class: 'uptime-percent' }, [
+      `${formatUptime(uptimePercent(service.id, incidents, NOW))} uptime, last 90 days`,
     ]),
   ]);
 }

@@ -340,6 +340,7 @@ a {
 
 .service {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -373,6 +374,71 @@ a {
   font-size: 14px;
   font-weight: 550;
   white-space: nowrap;
+}
+
+.uptime-bars {
+  display: flex;
+  flex: 1 0 100%;
+  gap: 2px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.uptime-bar {
+  position: relative;
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--tone-solid);
+}
+
+.uptime-bar:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.uptime-bar::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  display: none;
+  width: max-content;
+  max-width: min(260px, 70vw);
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.2);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.uptime-bar:nth-child(-n + 15)::after {
+  left: 0;
+  transform: none;
+}
+
+.uptime-bar:nth-last-child(-n + 15)::after {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.uptime-bar:hover::after,
+.uptime-bar:focus-visible::after {
+  display: block;
+}
+
+.uptime-percent {
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 /* Badges */
