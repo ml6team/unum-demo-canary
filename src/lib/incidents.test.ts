@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
   affectedServiceNames,
+  filterByServices,
   groupByDay,
   historyStart,
   incidentState,
@@ -153,5 +154,80 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('filterByServices', () => {
+  const apiActive = incident('api-active', '2026-10-01T11:00:00Z', null, {
+    affectedServiceIds: ['api'],
+  });
+  const webMaintenance = incident('web-upcoming', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z', {
+    kind: 'maintenance',
+    affectedServiceIds: ['web'],
+  });
+  const gitResolved = incident('git-resolved', '2026-09-30T06:10:00Z', '2026-09-30T06:55:00Z', {
+    affectedServiceIds: ['git'],
+  });
+  const multi = incident('multi-resolved', '2026-09-20T06:10:00Z', '2026-09-20T06:55:00Z', {
+    affectedServiceIds: ['api', 'web'],
+  });
+  const all = [apiActive, webMaintenance, gitResolved, multi];
+
+  it('AC1: an empty selection returns every incident in the same order', () => {
+    expect(filterByServices(all, []).map((i) => i.id)).toEqual(all.map((i) => i.id));
+  });
+
+  it('AC2: one selected service returns only incidents that list it', () => {
+    expect(filterByServices(all, ['git']).map((i) => i.id)).toEqual(['git-resolved']);
+  });
+
+  it('AC2: two selected services return the union', () => {
+    expect(filterByServices(all, ['git', 'web']).map((i) => i.id)).toEqual([
+      'web-upcoming',
+      'git-resolved',
+      'multi-resolved',
+    ]);
+  });
+
+  it('AC2: an incident affecting both selected services appears once', () => {
+    expect(filterByServices(all, ['api', 'web']).map((i) => i.id)).toEqual([
+      'api-active',
+      'web-upcoming',
+      'multi-resolved',
+    ]);
+  });
+
+  it('AC2: a multi-service incident is kept when only one of its services is selected', () => {
+    expect(filterByServices([multi], ['web'])).toEqual([multi]);
+  });
+
+  it('AC3: a selection that matches nothing returns no incidents', () => {
+    expect(filterByServices([apiActive, gitResolved], ['web'])).toEqual([]);
+  });
+
+  it('AC3: an unknown service id returns no incidents', () => {
+    expect(filterByServices(all, ['nope'])).toEqual([]);
+  });
+
+  it('AC2: active, upcoming and past lists only hold entries for the selected service', () => {
+    const filtered = filterByServices(all, ['web']);
+    expect(activeIncidents(filtered, NOW).map((i) => i.id)).toEqual([]);
+    expect(upcomingMaintenance(filtered, NOW).map((i) => i.id)).toEqual(['web-upcoming']);
+    expect(pastIncidents(filtered, NOW).map((i) => i.id)).toEqual(['multi-resolved']);
+
+    const filteredApi = filterByServices(all, ['api']);
+    expect(activeIncidents(filteredApi, NOW).map((i) => i.id)).toEqual(['api-active']);
+    expect(upcomingMaintenance(filteredApi, NOW)).toEqual([]);
+    expect(pastIncidents(filteredApi, NOW).map((i) => i.id)).toEqual([
+      'api-active',
+      'multi-resolved',
+    ]);
+  });
+
+  it('AC4: clearing the selection restores the full list without mutating the input', () => {
+    const before = [...all];
+    expect(filterByServices(all, ['git'])).toHaveLength(1);
+    expect(filterByServices(all, []).map((i) => i.id)).toEqual(before.map((i) => i.id));
+    expect(all).toEqual(before);
   });
 });
