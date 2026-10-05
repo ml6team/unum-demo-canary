@@ -10,6 +10,7 @@ import {
 import {
   activeIncidents,
   affectedServiceNames,
+  filterByServices,
   groupByDay,
   incidentState,
   pastIncidents,
@@ -182,8 +183,15 @@ function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
   return details;
 }
 
+const selected = new Set<string>();
+
+function visibleIncidents(): Incident[] {
+  return filterByServices(incidents, [...selected]);
+}
+
 function renderActive(): void {
-  const active = activeIncidents(incidents, NOW);
+  const active = activeIncidents(visibleIncidents(), NOW);
+  byId('active').replaceChildren();
   if (active.length === 0) return;
   byId('active').replaceChildren(
     el('section', { class: 'notice', 'aria-labelledby': 'active-heading' }, [
@@ -194,7 +202,8 @@ function renderActive(): void {
 }
 
 function renderMaintenance(): void {
-  const upcoming = upcomingMaintenance(incidents, NOW);
+  const upcoming = upcomingMaintenance(visibleIncidents(), NOW);
+  byId('maintenance').replaceChildren();
   if (upcoming.length === 0) return;
   byId('maintenance').replaceChildren(
     el('section', { class: 'notice', 'aria-labelledby': 'maintenance-heading' }, [
@@ -218,11 +227,13 @@ function renderMaintenance(): void {
 }
 
 function renderHistory(): void {
-  const groups = groupByDay(pastIncidents(incidents, NOW));
+  const groups = groupByDay(pastIncidents(visibleIncidents(), NOW));
   if (groups.length === 0) {
-    byId('days').replaceChildren(
-      el('p', { class: 'empty' }, ['No incidents reported in the last 90 days.']),
-    );
+    const message =
+      selected.size > 0
+        ? 'No incidents match the selected services.'
+        : 'No incidents reported in the last 90 days.';
+    byId('days').replaceChildren(el('p', { class: 'empty' }, [message]));
     return;
   }
   byId('days').replaceChildren(
@@ -241,12 +252,46 @@ function renderHistory(): void {
   );
 }
 
+function renderIncidents(): void {
+  renderActive();
+  renderMaintenance();
+  renderHistory();
+}
+
+function renderFilter(): void {
+  const clear = el('button', { type: 'button', class: 'filter-clear' }, ['Clear']);
+  clear.hidden = true;
+  clear.addEventListener('click', () => {
+    selected.clear();
+    for (const box of byId('filter').querySelectorAll('input')) box.checked = false;
+    clear.hidden = true;
+    renderIncidents();
+  });
+
+  const options = services.map((service) => {
+    const input = el('input', { type: 'checkbox', value: service.id });
+    input.addEventListener('change', () => {
+      if (input.checked) selected.add(service.id);
+      else selected.delete(service.id);
+      clear.hidden = selected.size === 0;
+      renderIncidents();
+    });
+    return el('label', { class: 'filter-option' }, [input, el('span', {}, [service.name])]);
+  });
+
+  byId('filter').replaceChildren(
+    el('fieldset', { class: 'filter' }, [
+      el('legend', { class: 'filter-legend' }, ['Filter by service']),
+      el('div', { class: 'filter-options' }, [...options, clear]),
+    ]),
+  );
+}
+
 renderOverall();
-renderActive();
-renderMaintenance();
+renderFilter();
 byId('services').replaceChildren(...services.map(serviceRow));
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
 );
-renderHistory();
+renderIncidents();
