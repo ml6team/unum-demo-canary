@@ -65,3 +65,9 @@ export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
 export function affectedServiceNames(incident: Incident, services: Service[]): string[] {
   return services.filter((s) => incident.affectedServiceIds.includes(s.id)).map((s) => s.name);
 }
+
+/** Incidents that affect at least one of `serviceIds`. An empty selection keeps everything. */
+export function filterByServices(incidents: Incident[], serviceIds: readonly string[]): Incident[] {
+  if (serviceIds.length === 0) return incidents;
+  return incidents.filter((i) => i.affectedServiceIds.some((id) => serviceIds.includes(id)));
+}
