@@ -91,6 +91,38 @@ describe('serviceUptimeHistory', () => {
   });
 });
 
+describe('serviceUptimeHistory pre-window clamping', () => {
+  it('AC2: a pre-window incident whose end overlaps the first window day appears on that day', () => {
+    // Starts one day before historyStart (2026-07-03), ends two hours into the first window day.
+    const incs = [
+      incident('pre', '2026-07-03T22:00:00Z', '2026-07-04T02:00:00Z', {
+        impact: 'partial-outage',
+      }),
+    ];
+    const result = serviceUptimeHistory('svc', incs, NOW);
+    const firstDay = result[0];
+    expect(firstDay?.day).toBe('2026-07-04');
+    expect(firstDay?.incidents.map((i) => i.id)).toContain('pre');
+    expect(firstDay?.status).toBe('partial-outage');
+  });
+});
+
+describe('uptimePercent pre-window clamping', () => {
+  it('AC1: a pre-window incident that ends inside the window counts only its overlap', () => {
+    // 2-day window: 2026-09-30T00:00:00Z → 2026-10-01T12:00:00Z = 2160 min
+    // Incident: 2026-09-29T23:00:00Z → 2026-09-30T01:00:00Z (starts 1h before window)
+    // Overlap = 2026-09-30T00:00:00Z → 2026-09-30T01:00:00Z = 60 min downtime
+    // Uptime = (2160 - 60) / 2160 = 97.2%
+    const incs = [
+      incident('pre', '2026-09-29T23:00:00Z', '2026-09-30T01:00:00Z', {
+        impact: 'partial-outage',
+      }),
+    ];
+    const pct = uptimePercent('svc', incs, NOW, 2);
+    expect(pct).toBe(97.2);
+  });
+});
+
 describe('uptimePercent', () => {
   it('AC1: returns 100.0 when there are no incidents', () => {
     expect(uptimePercent('svc', [], NOW)).toBe(100.0);

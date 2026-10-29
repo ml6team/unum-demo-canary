@@ -13,10 +13,31 @@ export interface UptimeDay {
 }
 
 /**
+ * Returns incidents that overlap the history window, including any that started before it
+ * but end inside it. `pastIncidents` only returns incidents whose `startedAt` falls within
+ * the window; this helper adds the pre-window ones so their overlap can be clamped.
+ */
+function windowIncidents(incidents: Incident[], now: Date, days: number): Incident[] {
+  const windowStartMs = historyStart(now, days).getTime();
+  const windowEndMs = now.getTime();
+
+  // Pre-window incidents: started before the window but end inside it.
+  const preWindow = incidents.filter((i) => {
+    const startMs = Date.parse(i.startedAt);
+    if (startMs >= windowStartMs) return false; // handled by pastIncidents
+    const endMs = i.resolvedAt != null ? Date.parse(i.resolvedAt) : windowEndMs;
+    return endMs > windowStartMs; // overlaps the window
+  });
+
+  return [...pastIncidents(incidents, now, days), ...preWindow];
+}
+
+/**
  * Returns one UptimeDay per calendar day in the history window, oldest first.
  * The array length equals `days` (defaults to 90).
  * Maintenance incidents are excluded: they never colour a day.
- * An incident spanning midnight appears on every day it overlaps.
+ * An incident spanning midnight appears on every day it overlaps within the window.
+ * Incidents that started before the window are clamped to their overlap.
  */
 export function serviceUptimeHistory(
   serviceId: string,
@@ -28,8 +49,8 @@ export function serviceUptimeHistory(
   const windowStartMs = windowStart.getTime();
   const windowEndMs = now.getTime();
 
-  // Collect non-maintenance past incidents for this service.
-  const relevant = pastIncidents(incidents, now, days).filter(
+  // Collect non-maintenance incidents that overlap the window for this service.
+  const relevant = windowIncidents(incidents, now, days).filter(
     (i) => i.kind !== 'maintenance' && i.affectedServiceIds.includes(serviceId),
   );
 
@@ -81,7 +102,8 @@ export function serviceUptimeHistory(
 /**
  * Returns the uptime percentage (0–100, one decimal) over the history window.
  * Only partial-outage and major-outage minutes count as downtime.
- * Maintenance incidents are excluded. Incident overlap with the window is clamped.
+ * Maintenance incidents are excluded. Incident overlap with the window is clamped,
+ * including incidents that started before the window but end inside it.
  */
 export function uptimePercent(
   serviceId: string,
@@ -96,7 +118,7 @@ export function uptimePercent(
 
   const downtimeImpacts = new Set(['partial-outage', 'major-outage']);
 
-  const relevant = pastIncidents(incidents, now, days).filter(
+  const relevant = windowIncidents(incidents, now, days).filter(
     (i) =>
       i.kind !== 'maintenance' &&
       i.affectedServiceIds.includes(serviceId) &&
