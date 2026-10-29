@@ -4,9 +4,9 @@ import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from '
 import {
   activeIncidents,
   affectedServiceNames,
+  filterByService,
   groupByDay,
   incidentState,
-  pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
@@ -185,8 +185,8 @@ function renderMaintenance(): void {
   );
 }
 
-function renderHistory(): void {
-  const groups = groupByDay(pastIncidents(incidents, NOW));
+function renderHistory(serviceId: string | null): void {
+  const groups = groupByDay(filterByService(incidents, NOW, serviceId));
   if (groups.length === 0) {
     byId('days').replaceChildren(
       el('p', { class: 'empty' }, ['No incidents reported in the last 90 days.']),
@@ -217,4 +217,29 @@ byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
 );
-renderHistory();
+
+// Populate service filter options
+const serviceFilter = byId('service-filter') as HTMLSelectElement;
+for (const service of services) {
+  const option = document.createElement('option');
+  option.value = service.id;
+  option.textContent = service.name;
+  serviceFilter.appendChild(option);
+}
+
+// Read initial service from URL, validate against known ids, render
+const knownServiceIds = services.map((s) => s.id);
+const rawParam = new URLSearchParams(location.search).get('service') ?? '';
+const initialServiceId = knownServiceIds.includes(rawParam) ? rawParam : null;
+serviceFilter.value = initialServiceId ?? '';
+renderHistory(initialServiceId);
+
+// On change: update URL and re-render
+serviceFilter.addEventListener('change', () => {
+  const selected = serviceFilter.value;
+  const newServiceId = knownServiceIds.includes(selected) ? selected : null;
+  const params = new URLSearchParams();
+  if (newServiceId !== null) params.set('service', newServiceId);
+  history.replaceState(null, '', params.toString() ? `?${params.toString()}` : location.pathname);
+  renderHistory(newServiceId);
+});

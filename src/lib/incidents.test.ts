@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
   affectedServiceNames,
+  filterByService,
   groupByDay,
   historyStart,
   incidentState,
@@ -153,5 +154,41 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('filterByService', () => {
+  const apiIncident = incident('api-inc', '2026-09-15T10:00:00Z', '2026-09-15T11:00:00Z', {
+    affectedServiceIds: ['api'],
+  });
+  const webIncident = incident('web-inc', '2026-09-20T10:00:00Z', '2026-09-20T11:00:00Z', {
+    affectedServiceIds: ['web'],
+  });
+  const bothIncident = incident('both-inc', '2026-09-25T10:00:00Z', '2026-09-25T11:00:00Z', {
+    affectedServiceIds: ['api', 'web'],
+  });
+  const list = [apiIncident, webIncident, bothIncident];
+
+  it('AC3: null serviceId returns the same result as pastIncidents', () => {
+    const expected = pastIncidents(list, NOW);
+    expect(filterByService(list, NOW, null)).toEqual(expected);
+  });
+
+  it('AC1: valid service id returns only incidents that include it', () => {
+    const result = filterByService(list, NOW, 'api');
+    const ids = result.map((i) => i.id);
+    expect(ids).toContain('api-inc');
+    expect(ids).toContain('both-inc');
+    expect(ids).not.toContain('web-inc');
+  });
+
+  it('AC1, AC4: service id with no matching incidents returns empty array', () => {
+    const result = filterByService(list, NOW, 'git');
+    expect(result).toEqual([]);
+  });
+
+  it('AC3: unknown service id returns empty array (no matches)', () => {
+    const result = filterByService(list, NOW, 'nonexistent-service');
+    expect(result).toEqual([]);
   });
 });

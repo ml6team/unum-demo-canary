@@ -57,6 +57,20 @@ export function groupByDay(incidents: Incident[]): DayGroup[] {
   return [...groups].map(([day, list]) => ({ day, incidents: list }));
 }
 
+/**
+ * Returns past incidents filtered to those whose affectedServiceIds includes
+ * serviceId, or all past incidents when serviceId is null.
+ */
+export function filterByService(
+  incidents: Incident[],
+  now: Date,
+  serviceId: string | null,
+): Incident[] {
+  const past = pastIncidents(incidents, now);
+  if (serviceId === null) return past;
+  return past.filter((i) => i.affectedServiceIds.includes(serviceId));
+}
+
 export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
   return [...incident.updates].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 }
