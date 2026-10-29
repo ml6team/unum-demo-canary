@@ -7,7 +7,7 @@ import {
   formatRange,
   formatTime,
 } from './format';
-import { HOUR_MS, MINUTE_MS } from './time';
+import { DAY_MS, HOUR_MS, MINUTE_MS } from './time';
 
 describe('formatDay', () => {
   it('renders a day key without shifting by timezone', () => {
@@ -63,6 +63,30 @@ describe('formatDuration', () => {
   it('rounds to the minute and never shows zero', () => {
     expect(formatDuration(59.6 * MINUTE_MS)).toBe('1h');
     expect(formatDuration(10_000)).toBe('1m');
+  });
+
+  it('AC1: shows days, hours and minutes for a duration of 27h 10m', () => {
+    expect(formatDuration((27 * 60 + 10) * MINUTE_MS)).toBe('1d 3h 10m');
+  });
+
+  it('AC1: shows days and hours, omitting zero minutes', () => {
+    expect(formatDuration(28 * HOUR_MS)).toBe('1d 4h');
+  });
+
+  it('AC1: shows days and minutes, omitting zero hours', () => {
+    expect(formatDuration(DAY_MS + 15 * MINUTE_MS)).toBe('1d 15m');
+  });
+
+  it('AC2: shows only days when hours and minutes are zero (exactly 24h)', () => {
+    expect(formatDuration(24 * HOUR_MS)).toBe('1d');
+  });
+
+  it('AC2: shows only days for a whole multiple of 24 hours (2d)', () => {
+    expect(formatDuration(2 * DAY_MS)).toBe('2d');
+  });
+
+  it('AC3: duration of 23h 59m stays unchanged', () => {
+    expect(formatDuration((23 * 60 + 59) * MINUTE_MS)).toBe('23h 59m');
   });
 });
 
