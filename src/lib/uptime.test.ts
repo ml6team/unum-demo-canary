@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { incidents as fixtureIncidents } from '../data';
 import { historyStart } from './incidents';
-import { addUtcDays, utcDayKey } from './time';
+import { utcDayKey } from './time';
 import type { Incident } from './types';
 import { uptimeDays, uptimePercent } from './uptime';
 
@@ -22,8 +22,8 @@ describe('uptimeDays', () => {
     const records = uptimeDays(fixtureIncidents, 'git', NOW);
     const expectedFirst = utcDayKey(historyStart(NOW));
     const expectedLast = utcDayKey(NOW);
-    expect(records[0].day).toBe(expectedFirst);
-    expect(records[89].day).toBe(expectedLast);
+    expect(records.at(0)?.day).toBe(expectedFirst);
+    expect(records.at(89)?.day).toBe(expectedLast);
   });
 
   it('AC1: days with no incidents return "operational"', () => {
@@ -150,8 +150,12 @@ describe('uptimeDays', () => {
 
   it('consecutive days advance correctly (index 1 is day after index 0)', () => {
     const records = uptimeDays(fixtureIncidents, 'api', NOW);
-    const d0 = new Date(`${records[0].day}T00:00:00Z`);
-    const d1 = new Date(`${records[1].day}T00:00:00Z`);
+    const day0 = records.at(0)?.day;
+    const day1 = records.at(1)?.day;
+    expect(day0).toBeDefined();
+    expect(day1).toBeDefined();
+    const d0 = new Date(`${day0!}T00:00:00Z`);
+    const d1 = new Date(`${day1!}T00:00:00Z`);
     expect(d1.getTime() - d0.getTime()).toBe(24 * 60 * 60 * 1000);
   });
 });
@@ -225,7 +229,9 @@ describe('uptimePercent', () => {
         title: 'Ongoing outage',
         impact: 'major-outage',
         affectedServiceIds: ['svc-y'],
-        startedAt: new Date(new Date('2026-10-01T12:00:00Z').getTime() - 90 * 24 * 3600 * 1000).toISOString(),
+        startedAt: new Date(
+          new Date('2026-10-01T12:00:00Z').getTime() - 90 * 24 * 3600 * 1000,
+        ).toISOString(),
         resolvedAt: null,
         updates: [],
       },
