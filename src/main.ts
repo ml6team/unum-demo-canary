@@ -12,6 +12,7 @@ import {
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
+import { type DayRecord, uptimeDays, uptimePercent } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -81,16 +82,38 @@ function renderOverall(): void {
   );
 }
 
-function serviceRow(service: Service): HTMLLIElement {
+function renderUptimeBar(records: DayRecord[]): HTMLDivElement {
+  const bar = el('div', { class: 'uptime-bar' });
+  for (const record of records) {
+    bar.append(
+      el('button', {
+        class: `uptime-seg tone-${record.status}`,
+        'aria-label': record.day,
+        type: 'button',
+      }),
+    );
+  }
+  return bar;
+}
+
+function serviceRow(service: Service, serviceIncidents: Incident[]): HTMLLIElement {
+  const records = uptimeDays(serviceIncidents, service.id, NOW);
+  const pct = uptimePercent(serviceIncidents, service.id, NOW);
   return el('li', { class: 'service' }, [
-    el('div', { class: 'service-text' }, [
-      el('h3', { class: 'service-name' }, [service.name]),
-      el('p', { class: 'service-description' }, [service.description]),
+    el('div', { class: 'service-row' }, [
+      el('div', { class: 'service-text' }, [
+        el('h3', { class: 'service-name' }, [
+          service.name,
+          el('span', { class: 'uptime-pct' }, [pct]),
+        ]),
+        el('p', { class: 'service-description' }, [service.description]),
+      ]),
+      el('span', { class: `status tone-${service.status}` }, [
+        icon(service.status),
+        STATUS_LABEL[service.status],
+      ]),
     ]),
-    el('span', { class: `status tone-${service.status}` }, [
-      icon(service.status),
-      STATUS_LABEL[service.status],
-    ]),
+    renderUptimeBar(records),
   ]);
 }
 
@@ -212,7 +235,7 @@ function renderHistory(): void {
 renderOverall();
 renderActive();
 renderMaintenance();
-byId('services').replaceChildren(...services.map(serviceRow));
+byId('services').replaceChildren(...services.map((s) => serviceRow(s, incidents)));
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
