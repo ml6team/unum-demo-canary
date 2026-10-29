@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { incidents as fixtureIncidents } from '../data/index';
-import { serviceUptimeHistory, uptimePercent } from './uptime';
 import type { Incident } from './types';
+import { serviceUptimeHistory, uptimePercent } from './uptime';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
 
@@ -97,16 +97,18 @@ describe('uptimePercent', () => {
   });
 
   it('AC1: percentage formula — 1 hour partial-outage in a 2-day window', () => {
-    // 2-day window: 2880 minutes total, 60 minutes downtime → 97.9%
-    const now2 = new Date('2026-10-01T00:00:00Z');
+    // now2 at noon; 2-day window: 2026-09-30T00:00:00Z → 2026-10-01T12:00:00Z = 2160 min
+    // downtime = 60 min; uptime = (2160-60)/2160 = 97.2%
+    const now2 = new Date('2026-10-01T12:00:00Z');
     const incs = [
       incident('p', '2026-09-30T06:00:00Z', '2026-09-30T07:00:00Z', {
         impact: 'partial-outage',
       }),
     ];
-    // 2-day window: historyStart = 2026-09-30T00:00:00Z, total = 48*60=2880 min, downtime=60
+    // historyStart(now2, 2) = addUtcDays(startOfUtcDay(now2), -(2-1)) = 2026-09-30T00:00:00Z
+    // total = (2026-10-01T12:00:00Z - 2026-09-30T00:00:00Z) / 60000ms = 2160 min
     const pct = uptimePercent('svc', incs, now2, 2);
-    expect(pct).toBe(97.9);
+    expect(pct).toBe(97.2);
   });
 
   it('AC1: degraded incidents do not count as downtime', () => {
@@ -138,10 +140,7 @@ describe('uptimePercent', () => {
       ['search', 99.8],
     ];
     for (const [serviceId, expected] of cases) {
-      expect(
-        uptimePercent(serviceId, fixtureIncidents, NOW),
-        `${serviceId} uptime`,
-      ).toBe(expected);
+      expect(uptimePercent(serviceId, fixtureIncidents, NOW), `${serviceId} uptime`).toBe(expected);
     }
   });
 });
