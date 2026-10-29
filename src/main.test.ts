@@ -118,7 +118,8 @@ describe('serviceRow uptime bar', () => {
   });
 
   it('percentage label reflects actual downtime from partial-outage incidents', () => {
-    // 24h partial-outage in 90 days — enough downtime to register at 1 decimal place
+    // Use a 24h outage: 1h in 90 days (128,880 min) rounds to 100.0% at one decimal,
+    // so a 1h fixture could never detect a missing implementation. 24h = 98.9%.
     const incs = [
       incident('p', '2026-09-01T00:00:00Z', '2026-09-02T00:00:00Z', {
         impact: 'partial-outage',
