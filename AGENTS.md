@@ -47,3 +47,19 @@ All five must pass. CI runs the same steps as the required `ci` check.
 - Commits: Conventional Commits (`feat:`, `fix:`, `test:`, `refactor:`, `chore:`, `docs:`).
 - PR title: `<type>: <summary> (<LINEAR-ID>)`. Example: `feat: 90-day uptime per service (UNUSFD-12)`.
 - PR body: link the Linear ticket and the approved design, then summarise how the change matches the design, and list any deviation from it with the reason.
+
+## Project map
+
+System knowledge (architecture, data model, modules, delivery pipeline) lives in
+[`docs/project-map/`](docs/project-map/README.md).
+
+## Emergency stop and rollback
+
+The only environment is GitHub Pages (`https://ml6team.github.io/unum-demo-canary/`).
+
+Full procedure: [`docs/project-map/environment-github-pages.md`](docs/project-map/environment-github-pages.md)
+
+**Stop:** Settings → Pages → set Source to None → site returns 404.  
+**Rollback:** re-run the last known-good `deploy` workflow run, or revert the bad commit on `main`.
+
+Escalate to @GeorgesLorre (CODEOWNERS) if access is unavailable.
