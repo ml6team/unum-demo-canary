@@ -12,6 +12,7 @@ import {
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
+import { serviceUptimeHistory, uptimePercent } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -81,11 +82,30 @@ function renderOverall(): void {
   );
 }
 
-function serviceRow(service: Service): HTMLLIElement {
+export function serviceRow(
+  service: Service,
+  serviceIncidents: Incident[],
+  now: Date,
+): HTMLLIElement {
+  const history = serviceUptimeHistory(service.id, serviceIncidents, now);
+  const pct = uptimePercent(service.id, serviceIncidents, now);
+
+  const segments = history.map((day) =>
+    el(
+      'button',
+      { class: `uptime-segment tone-${day.status}`, 'aria-label': formatDay(day.day) },
+      [],
+    ),
+  );
+
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-text' }, [
       el('h3', { class: 'service-name' }, [service.name]),
       el('p', { class: 'service-description' }, [service.description]),
+    ]),
+    el('div', { class: 'service-history' }, [
+      el('div', { class: 'uptime-bar', 'aria-label': '90-day uptime history' }, segments),
+      el('p', { class: 'uptime-pct' }, [`${pct.toFixed(1)}% uptime`]),
     ]),
     el('span', { class: `status tone-${service.status}` }, [
       icon(service.status),
@@ -212,7 +232,7 @@ function renderHistory(): void {
 renderOverall();
 renderActive();
 renderMaintenance();
-byId('services').replaceChildren(...services.map(serviceRow));
+byId('services').replaceChildren(...services.map((s) => serviceRow(s, incidents, NOW)));
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),

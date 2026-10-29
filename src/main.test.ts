@@ -79,9 +79,7 @@ describe('serviceRow uptime bar', () => {
     ];
     const li = serviceRow(API_SERVICE, incs, NOW);
     const buttons = li.querySelectorAll('button.uptime-segment');
-    const sep01 = Array.from(buttons).find(
-      (b) => b.getAttribute('aria-label') === 'Sep 1, 2026',
-    );
+    const sep01 = Array.from(buttons).find((b) => b.getAttribute('aria-label') === 'Sep 1, 2026');
     expect(sep01?.classList.contains('tone-partial-outage')).toBe(true);
   });
 
@@ -96,9 +94,7 @@ describe('serviceRow uptime bar', () => {
     ];
     const li = serviceRow(API_SERVICE, incs, NOW);
     const buttons = li.querySelectorAll('button.uptime-segment');
-    const aug15 = Array.from(buttons).find(
-      (b) => b.getAttribute('aria-label') === 'Aug 15, 2026',
-    );
+    const aug15 = Array.from(buttons).find((b) => b.getAttribute('aria-label') === 'Aug 15, 2026');
     expect(aug15?.classList.contains('tone-major-outage')).toBe(true);
   });
 
@@ -111,9 +107,7 @@ describe('serviceRow uptime bar', () => {
     ];
     const li = serviceRow(API_SERVICE, incs, NOW);
     const buttons = li.querySelectorAll('button.uptime-segment');
-    const sep05 = Array.from(buttons).find(
-      (b) => b.getAttribute('aria-label') === 'Sep 5, 2026',
-    );
+    const sep05 = Array.from(buttons).find((b) => b.getAttribute('aria-label') === 'Sep 5, 2026');
     expect(sep05?.classList.contains('tone-operational')).toBe(true);
   });
 
@@ -124,9 +118,9 @@ describe('serviceRow uptime bar', () => {
   });
 
   it('percentage label reflects actual downtime from partial-outage incidents', () => {
-    // 1h partial-outage in 90 days lowers uptime below 100%
+    // 24h partial-outage in 90 days — enough downtime to register at 1 decimal place
     const incs = [
-      incident('p', '2026-09-01T10:00:00Z', '2026-09-01T11:00:00Z', {
+      incident('p', '2026-09-01T00:00:00Z', '2026-09-02T00:00:00Z', {
         impact: 'partial-outage',
       }),
     ];

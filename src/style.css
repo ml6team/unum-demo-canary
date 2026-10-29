@@ -375,6 +375,37 @@ a {
   white-space: nowrap;
 }
 
+/* Uptime history bar */
+
+.service-history {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.uptime-bar {
+  display: flex;
+  gap: 1px;
+  height: 28px;
+}
+
+.uptime-segment {
+  flex: 1;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: var(--tone-solid);
+  cursor: default;
+}
+
+.uptime-pct {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 /* Badges */
 
 .badge {
