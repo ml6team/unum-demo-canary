@@ -48,6 +48,15 @@ export function uptimeDays(incidents: Incident[], serviceId: string, now: Date):
 }
 
 /**
+ * Returns the records to render: all 90 when not compact, the most-recent 30
+ * (records.slice(-30)) when compact. The uptime percentage is always computed
+ * from the full 90-entry array regardless of this selection.
+ */
+export function selectRecords(records: DayRecord[], compact: boolean): DayRecord[] {
+  return compact ? records.slice(-30) : records;
+}
+
+/**
  * Returns the 90-day uptime percentage for a service as a string like "99.8%".
  * Only partial-outage and major-outage minutes count as downtime. Maintenance
  * incidents are excluded. Incident durations are clamped to the 90-day window.
