@@ -1,3 +1,4 @@
+import { formatDay } from './format';
 import { historyStart } from './incidents';
 import { worstStatus } from './status';
 import { addUtcDays, DAY_MS, utcDayKey } from './time';
@@ -7,6 +8,16 @@ export interface DayRecord {
   day: string; // 'YYYY-MM-DD', UTC
   status: ServiceStatus;
   incidents: Incident[]; // non-maintenance incidents affecting this service on this day
+}
+
+/**
+ * Returns the tooltip text for a segment: the formatted date and a list of incident
+ * titles, or "No incidents" when the incidents array is empty.
+ */
+export function formatTooltipText(day: string, incidents: Incident[]): string {
+  const date = formatDay(day);
+  if (incidents.length === 0) return 'No incidents';
+  return `${date} · ${incidents.map((i) => i.title).join(', ')}`;
 }
 
 /**

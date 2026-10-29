@@ -720,9 +720,59 @@ a {
   background-color: var(--tone-solid);
   cursor: default;
   padding: 0;
+  position: relative;
 }
 
 .uptime-seg:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
+}
+
+.uptime-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.8em;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 10;
+  visibility: hidden;
+}
+
+.uptime-seg:hover .uptime-tip,
+.uptime-seg:focus-visible .uptime-tip {
+  visibility: visible;
+}
+
+/* Uptime legend */
+
+.uptime-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 6px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+.uptime-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.uptime-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background-color: var(--tone-solid);
+  flex: none;
 }

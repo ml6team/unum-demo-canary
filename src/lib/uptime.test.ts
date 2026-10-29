@@ -3,7 +3,7 @@ import { incidents as fixtureIncidents } from '../data';
 import { historyStart } from './incidents';
 import { utcDayKey } from './time';
 import type { Incident } from './types';
-import { uptimeDays, uptimePercent } from './uptime';
+import { formatTooltipText, uptimeDays, uptimePercent } from './uptime';
 
 /** NOW used in fixtures */
 const NOW = new Date('2026-10-01T12:00:00Z');
@@ -256,6 +256,69 @@ describe('DayRecord shape', () => {
       expect(typeof r.day).toBe('string');
       expect(r.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(Array.isArray(r.incidents)).toBe(true);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatTooltipText (AC3, AC4)
+// ---------------------------------------------------------------------------
+
+describe('formatTooltipText', () => {
+  it('AC3: returns "No incidents" when the incidents array is empty', () => {
+    expect(formatTooltipText('2026-09-01', [])).toBe('No incidents');
+  });
+
+  it('AC3: returns the formatted date and incident title for a single incident', () => {
+    const inc: Incident = {
+      id: 'test-1',
+      kind: 'incident',
+      title: 'Elevated API error rates',
+      impact: 'partial-outage',
+      affectedServiceIds: ['api'],
+      startedAt: '2026-09-01T08:00:00Z',
+      resolvedAt: '2026-09-01T09:00:00Z',
+      updates: [],
+    };
+    const text = formatTooltipText('2026-09-01', [inc]);
+    expect(text).toContain('Sep 1, 2026');
+    expect(text).toContain('Elevated API error rates');
+  });
+
+  it('AC3: includes all incident titles when multiple incidents occur on the same day', () => {
+    const incidents: Incident[] = [
+      {
+        id: 'test-a',
+        kind: 'incident',
+        title: 'First outage',
+        impact: 'degraded',
+        affectedServiceIds: ['api'],
+        startedAt: '2026-09-02T06:00:00Z',
+        resolvedAt: '2026-09-02T07:00:00Z',
+        updates: [],
+      },
+      {
+        id: 'test-b',
+        kind: 'incident',
+        title: 'Second outage',
+        impact: 'partial-outage',
+        affectedServiceIds: ['api'],
+        startedAt: '2026-09-02T10:00:00Z',
+        resolvedAt: '2026-09-02T11:00:00Z',
+        updates: [],
+      },
+    ];
+    const text = formatTooltipText('2026-09-02', incidents);
+    expect(text).toContain('First outage');
+    expect(text).toContain('Second outage');
+  });
+
+  it('AC4: every day in the 90-day range has a DayRecord with a day key for its segment button', () => {
+    // Verifies the data contract: one record per day that maps to one button
+    const records = uptimeDays(fixtureIncidents, 'api', NOW);
+    expect(records).toHaveLength(90);
+    for (const r of records) {
+      expect(r.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
 });

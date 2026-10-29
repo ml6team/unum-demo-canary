@@ -12,7 +12,7 @@ import {
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
-import { type DayRecord, uptimeDays, uptimePercent } from './lib/uptime';
+import { type DayRecord, formatTooltipText, uptimeDays, uptimePercent } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -82,16 +82,41 @@ function renderOverall(): void {
   );
 }
 
+const LEGEND_STATUSES: ServiceStatus[] = [
+  'operational',
+  'degraded',
+  'partial-outage',
+  'major-outage',
+];
+
+function renderLegend(): HTMLDivElement {
+  return el(
+    'div',
+    { class: 'uptime-legend', 'aria-label': 'Uptime bar legend' },
+    LEGEND_STATUSES.map((status) =>
+      el('span', { class: 'uptime-legend-item' }, [
+        el('span', { class: `uptime-swatch tone-${status}`, 'aria-hidden': 'true' }),
+        STATUS_LABEL[status],
+      ]),
+    ),
+  );
+}
+
 function renderUptimeBar(records: DayRecord[]): HTMLDivElement {
   const bar = el('div', { class: 'uptime-bar' });
   for (const record of records) {
-    bar.append(
-      el('button', {
-        class: `uptime-seg tone-${record.status}`,
-        'aria-label': record.day,
-        type: 'button',
-      }),
-    );
+    const tipId = `tip-${record.day}`;
+    const tip = el('span', { class: 'uptime-tip', role: 'tooltip', id: tipId }, [
+      formatTooltipText(record.day, record.incidents),
+    ]);
+    const btn = el('button', {
+      class: `uptime-seg tone-${record.status}`,
+      'aria-label': record.day,
+      'aria-describedby': tipId,
+      type: 'button',
+    });
+    btn.append(tip);
+    bar.append(btn);
   }
   return bar;
 }
@@ -114,6 +139,7 @@ function serviceRow(service: Service, serviceIncidents: Incident[]): HTMLLIEleme
       ]),
     ]),
     renderUptimeBar(records),
+    renderLegend(),
   ]);
 }
 
