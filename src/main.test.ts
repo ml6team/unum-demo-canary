@@ -166,9 +166,7 @@ describe('serviceRow tooltip (AC3, AC5)', () => {
     ];
     const li = serviceRow(API_SERVICE, incs, NOW);
     const buttons = li.querySelectorAll('button.uptime-segment');
-    const sep10 = Array.from(buttons).find(
-      (b) => b.getAttribute('aria-label') === 'Sep 10, 2026',
-    );
+    const sep10 = Array.from(buttons).find((b) => b.getAttribute('aria-label') === 'Sep 10, 2026');
     const tooltip = sep10?.querySelector('.segment-tooltip');
     expect(tooltip?.textContent).toContain('Elevated API error rates');
     expect(tooltip?.textContent).not.toContain('No incidents');
@@ -219,7 +217,6 @@ describe('uptimeLegend', () => {
 
   it('legend: each item has a swatch span with matching tone-* class', () => {
     const legend = uptimeLegend();
-    const items = Array.from(legend.querySelectorAll('li'));
     const expectedClasses = [
       'tone-operational',
       'tone-degraded',

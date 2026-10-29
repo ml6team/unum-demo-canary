@@ -392,6 +392,7 @@ a {
 }
 
 .uptime-segment {
+  position: relative;
   flex: 1;
   height: 100%;
   padding: 0;
@@ -401,9 +402,71 @@ a {
   cursor: default;
 }
 
+.segment-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+  max-width: 220px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--surface-raised, #fff);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+  color: var(--text, #111);
+  font-size: 12px;
+  text-align: left;
+  white-space: normal;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.uptime-segment:hover .segment-tooltip,
+.uptime-segment:focus-visible .segment-tooltip {
+  visibility: visible;
+}
+
+.tooltip-date {
+  font-weight: 600;
+}
+
+.tooltip-incidents {
+  color: var(--text-muted);
+}
+
 .uptime-pct {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.uptime-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 2px;
+  background: var(--tone-solid);
 }
 
 /* Badges */
@@ -709,6 +772,15 @@ a {
 
   .maintenance {
     padding: 14px 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  /* Hide segments older than 30 days so the bar stays readable on narrow screens.
+     Segments are oldest-first; indices 0–59 (first 60) are the older 60 days.
+     Only the 30 newest (indices 60–89) remain visible. */
+  .uptime-segment:nth-child(-n + 60) {
+    display: none;
   }
 }
 

@@ -82,6 +82,25 @@ function renderOverall(): void {
   );
 }
 
+export function uptimeLegend(): HTMLUListElement {
+  const entries: Array<{ status: ServiceStatus; label: string }> = [
+    { status: 'operational', label: 'Operational' },
+    { status: 'degraded', label: 'Degraded' },
+    { status: 'partial-outage', label: 'Partial outage' },
+    { status: 'major-outage', label: 'Major outage' },
+  ];
+  return el(
+    'ul',
+    { class: 'uptime-legend', role: 'list' },
+    entries.map(({ status, label }) =>
+      el('li', { class: 'legend-item' }, [
+        el('span', { class: `legend-swatch tone-${status}` }, []),
+        label,
+      ]),
+    ),
+  );
+}
+
 export function serviceRow(
   service: Service,
   serviceIncidents: Incident[],
@@ -90,13 +109,24 @@ export function serviceRow(
   const history = serviceUptimeHistory(service.id, serviceIncidents, now);
   const pct = uptimePercent(service.id, serviceIncidents, now);
 
-  const segments = history.map((day) =>
-    el(
+  const segments = history.map((day, index) => {
+    const tooltipId = `tooltip-${service.id}-${index}`;
+    const incidentText =
+      day.incidents.length > 0 ? day.incidents.map((i) => i.title).join(' · ') : 'No incidents';
+    const tooltip = el('span', { class: 'segment-tooltip', id: tooltipId, role: 'tooltip' }, [
+      el('span', { class: 'tooltip-date' }, [formatDay(day.day)]),
+      el('span', { class: 'tooltip-incidents' }, [incidentText]),
+    ]);
+    return el(
       'button',
-      { class: `uptime-segment tone-${day.status}`, 'aria-label': formatDay(day.day) },
-      [],
-    ),
-  );
+      {
+        class: `uptime-segment tone-${day.status}`,
+        'aria-label': formatDay(day.day),
+        'aria-describedby': tooltipId,
+      },
+      [tooltip],
+    );
+  });
 
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-text' }, [
@@ -106,6 +136,7 @@ export function serviceRow(
     el('div', { class: 'service-history' }, [
       el('div', { class: 'uptime-bar', 'aria-label': '90-day uptime history' }, segments),
       el('p', { class: 'uptime-pct' }, [`${pct.toFixed(1)}% uptime`]),
+      uptimeLegend(),
     ]),
     el('span', { class: `status tone-${service.status}` }, [
       icon(service.status),
