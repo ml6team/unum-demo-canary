@@ -12,7 +12,13 @@ import {
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
-import { type DayRecord, formatTooltipText, uptimeDays, uptimePercent } from './lib/uptime';
+import {
+  type DayRecord,
+  formatTooltipText,
+  selectRecords,
+  uptimeDays,
+  uptimePercent,
+} from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -121,9 +127,54 @@ function renderUptimeBar(records: DayRecord[]): HTMLDivElement {
   return bar;
 }
 
+const COMPACT_BREAKPOINT = 480;
+
+function attachResizeObserver(
+  wrap: HTMLDivElement,
+  allRecords: DayRecord[],
+  bar: HTMLDivElement,
+): void {
+  const observer = new ResizeObserver((entries) => {
+    const width = entries[0]?.contentRect.width ?? wrap.getBoundingClientRect().width;
+    const compact = width < COMPACT_BREAKPOINT;
+    if (compact) {
+      wrap.setAttribute('data-compact', 'true');
+    } else {
+      wrap.removeAttribute('data-compact');
+    }
+    const visible = selectRecords(allRecords, compact);
+    const segments: HTMLButtonElement[] = [];
+    for (const record of visible) {
+      const tipId = `tip-${record.day}`;
+      const tip = el('span', { class: 'uptime-tip', role: 'tooltip', id: tipId }, [
+        formatTooltipText(record.day, record.incidents),
+      ]);
+      const btn = el('button', {
+        class: `uptime-seg tone-${record.status}`,
+        'aria-label': record.day,
+        'aria-describedby': tipId,
+        type: 'button',
+      });
+      btn.append(tip);
+      segments.push(btn);
+    }
+    bar.replaceChildren(...segments);
+  });
+  observer.observe(wrap);
+}
+
 function serviceRow(service: Service, serviceIncidents: Incident[]): HTMLLIElement {
   const records = uptimeDays(serviceIncidents, service.id, NOW);
   const pct = uptimePercent(serviceIncidents, service.id, NOW);
+  const bar = renderUptimeBar(records);
+  const labels = el('div', { class: 'uptime-bar-labels', 'aria-hidden': 'true' }, [
+    el('span', { class: 'uptime-bar-label--90' }, ['90 days ago']),
+    el('span', { class: 'uptime-bar-label--30' }, ['30 days ago']),
+    el('span', { class: 'uptime-bar-label--today' }, ['Today']),
+  ]);
+  const wrap = el('div', { class: 'uptime-wrap' });
+  wrap.append(bar, labels);
+  attachResizeObserver(wrap, records, bar);
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-row' }, [
       el('div', { class: 'service-text' }, [
@@ -138,7 +189,7 @@ function serviceRow(service: Service, serviceIncidents: Incident[]): HTMLLIEleme
         STATUS_LABEL[service.status],
       ]),
     ]),
-    renderUptimeBar(records),
+    wrap,
     renderLegend(),
   ]);
 }

@@ -3,7 +3,7 @@ import { incidents as fixtureIncidents } from '../data';
 import { historyStart } from './incidents';
 import { utcDayKey } from './time';
 import type { Incident } from './types';
-import { formatTooltipText, uptimeDays, uptimePercent } from './uptime';
+import { formatTooltipText, selectRecords, uptimeDays, uptimePercent } from './uptime';
 
 /** NOW used in fixtures */
 const NOW = new Date('2026-10-01T12:00:00Z');
@@ -320,5 +320,29 @@ describe('formatTooltipText', () => {
     for (const r of records) {
       expect(r.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// selectRecords (AC5)
+// ---------------------------------------------------------------------------
+
+describe('selectRecords', () => {
+  const allRecords = uptimeDays(fixtureIncidents, 'api', NOW);
+
+  it('AC5: compact=false returns all 90 records unchanged', () => {
+    const result = selectRecords(allRecords, false);
+    expect(result).toHaveLength(90);
+    expect(result).toBe(allRecords);
+  });
+
+  it('AC5: compact=true returns the last 30 records', () => {
+    const result = selectRecords(allRecords, true);
+    expect(result).toHaveLength(30);
+  });
+
+  it('AC5: compact=true first record is the 61st of the full array (most recent 30)', () => {
+    const result = selectRecords(allRecords, true);
+    expect(result[0]).toBe(allRecords[60]);
   });
 });

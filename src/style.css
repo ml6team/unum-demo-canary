@@ -776,3 +776,36 @@ a {
   background-color: var(--tone-solid);
   flex: none;
 }
+
+/* Uptime bar wrapper and date labels */
+
+.uptime-wrap {
+  margin-top: 0;
+}
+
+.uptime-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* In normal mode show "90 days ago", hide "30 days ago" */
+.uptime-bar-label--30 {
+  display: none;
+}
+
+/* In compact mode show "30 days ago", hide "90 days ago" */
+.uptime-wrap[data-compact] .uptime-bar-label--90 {
+  display: none;
+}
+
+.uptime-wrap[data-compact] .uptime-bar-label--30 {
+  display: inline;
+}
+
+/* Prevent horizontal overflow at narrow widths */
+.uptime-wrap[data-compact] .uptime-bar {
+  overflow: hidden;
+}
