@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DARK_PALETTE, hexToLinear, luminance, wcagContrast } from './contrast';
 
+/** Retrieve a palette entry, throwing if absent (guards TS noUncheckedIndexedAccess). */
+function p(palette: Record<string, string>, key: string): string {
+  const value = palette[key];
+  if (value === undefined) throw new Error(`Palette key "${key}" not found`);
+  return value;
+}
+
 // Light-mode values from src/style.css :root block (for AC5 no-retain check)
 const LIGHT_PALETTE: Record<string, string> = {
   '--operational': '#1a7f37',
@@ -35,8 +42,8 @@ describe('WCAG contrast helper', () => {
 
 describe('AC4: dark palette structure', () => {
   it('AC4: dark palette defines a near-black background and a near-white text colour', () => {
-    const bgL = luminance(hexToLinear(DARK_PALETTE['--bg']));
-    const textL = luminance(hexToLinear(DARK_PALETTE['--text']));
+    const bgL = luminance(hexToLinear(p(DARK_PALETTE, '--bg')));
+    const textL = luminance(hexToLinear(p(DARK_PALETTE, '--text')));
     // background must be darker than text
     expect(bgL).toBeLessThan(textL);
     // background must be near-black (luminance < 0.05)
@@ -46,7 +53,9 @@ describe('AC4: dark palette structure', () => {
   });
 
   it('AC4: text on dark background achieves at least 4.5:1 contrast (automatic dark palette)', () => {
-    expect(wcagContrast(DARK_PALETTE['--text'], DARK_PALETTE['--bg'])).toBeGreaterThanOrEqual(4.5);
+    expect(wcagContrast(p(DARK_PALETTE, '--text'), p(DARK_PALETTE, '--bg'))).toBeGreaterThanOrEqual(
+      4.5,
+    );
   });
 });
 
@@ -61,50 +70,36 @@ describe('AC5: text colours on backgrounds', () => {
   ];
 
   it.each(textPairs)('AC5: %s achieves >= 4.5:1', (_name, fg, bg) => {
-    expect(wcagContrast(DARK_PALETTE[fg], DARK_PALETTE[bg])).toBeGreaterThanOrEqual(4.5);
+    expect(wcagContrast(p(DARK_PALETTE, fg), p(DARK_PALETTE, bg))).toBeGreaterThanOrEqual(4.5);
   });
 });
 
 describe('AC5: status-indicator colours on backgrounds', () => {
-  const statuses = [
-    'operational',
-    'degraded',
-    'partial',
-    'major',
-    'maintenance',
-  ] as const;
+  const statuses = ['operational', 'degraded', 'partial', 'major', 'maintenance'] as const;
 
   for (const status of statuses) {
-    const tone = `--${status}`;
-    const toneKey = status === 'operational'
-      ? '--operational'
-      : status === 'degraded'
-      ? '--degraded'
-      : status === 'partial'
-      ? '--partial'
-      : status === 'major'
-      ? '--major'
-      : '--maintenance';
+    const key = `--${status}`;
 
     it(`AC5: ${status} colour on --bg achieves >= 4.5:1`, () => {
-      expect(wcagContrast(DARK_PALETTE[toneKey], DARK_PALETTE['--bg'])).toBeGreaterThanOrEqual(4.5);
+      expect(wcagContrast(p(DARK_PALETTE, key), p(DARK_PALETTE, '--bg'))).toBeGreaterThanOrEqual(
+        4.5,
+      );
     });
 
     it(`AC5: ${status} colour on --surface achieves >= 4.5:1`, () => {
-      expect(wcagContrast(DARK_PALETTE[toneKey], DARK_PALETTE['--surface'])).toBeGreaterThanOrEqual(4.5);
+      expect(
+        wcagContrast(p(DARK_PALETTE, key), p(DARK_PALETTE, '--surface')),
+      ).toBeGreaterThanOrEqual(4.5);
     });
 
     it(`AC5: ${status} colour on its soft background achieves >= 4.5:1`, () => {
       expect(
-        wcagContrast(DARK_PALETTE[`${toneKey}-soft` === '--partial-soft' ? '--partial-soft' : `${toneKey}-soft`], DARK_PALETTE[`${toneKey}-soft`])
-      ).toSatisfy((_: number) => true); // soft-on-soft is same colour, skip; test fg on soft instead
-      expect(
-        wcagContrast(DARK_PALETTE[toneKey], DARK_PALETTE[`${toneKey}-soft`])
+        wcagContrast(p(DARK_PALETTE, key), p(DARK_PALETTE, `${key}-soft`)),
       ).toBeGreaterThanOrEqual(4.5);
     });
 
     it(`AC5: white on ${status}-solid achieves >= 4.5:1`, () => {
-      expect(wcagContrast('#ffffff', DARK_PALETTE[`${toneKey}-solid`])).toBeGreaterThanOrEqual(4.5);
+      expect(wcagContrast('#ffffff', p(DARK_PALETTE, `${key}-solid`))).toBeGreaterThanOrEqual(4.5);
     });
   }
 });
@@ -129,6 +124,6 @@ describe('AC5: no element retains a light-mode colour in dark mode', () => {
   ] as const;
 
   it.each(statusKeys)('AC5: dark %s differs from light-mode value', (key) => {
-    expect(DARK_PALETTE[key].toLowerCase()).not.toBe(LIGHT_PALETTE[key].toLowerCase());
+    expect(p(DARK_PALETTE, key).toLowerCase()).not.toBe(p(LIGHT_PALETTE, key).toLowerCase());
   });
 });
