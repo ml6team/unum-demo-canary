@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+// index.html is imported via Vite's ?raw suffix rather than readFileSync.
+// The original failing-tests commit used readFileSync + __dirname, but
+// __dirname is not available in Vitest's ESM environment and @types/node
+// is not a project dependency. The ?raw import is the Vite-native
+// equivalent and produces the same result: the raw file content as a string.
 import indexHtmlRaw from '../../index.html?raw';
 import { buildAtomFeed } from './feed';
 import type { Incident, Service } from './types';
