@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Incident, Service } from './types';
+import indexHtmlRaw from '../../index.html?raw';
 import { buildAtomFeed } from './feed';
+import type { Incident, Service } from './types';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -196,7 +195,7 @@ describe('AC2: buildAtomFeed – Atom structure', () => {
 // ---------------------------------------------------------------------------
 
 describe('AC3: index.html – Subscribe link and alternate link tag', () => {
-  const indexHtml = readFileSync(join(__dirname, '../../index.html'), 'utf-8');
+  const indexHtml = indexHtmlRaw;
 
   it('AC3-a: index.html contains <link rel="alternate" type="application/atom+xml" href="feed.xml">', () => {
     expect(indexHtml).toContain('rel="alternate"');
