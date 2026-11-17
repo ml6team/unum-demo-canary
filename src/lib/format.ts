@@ -1,4 +1,4 @@
-import { durationMs, HOUR_MS, MINUTE_MS } from './time';
+import { DAY_MS, durationMs, HOUR_MS, MINUTE_MS } from './time';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -37,13 +37,18 @@ export function formatRange(start: string, end: string | null): string {
   return `${from} – ${to} UTC`;
 }
 
-/** "45m", "2h 35m", "3h"; rounds to the minute and never shows less than 1m. */
+/** "45m", "2h 35m", "1d 3h 10m", "2d"; rounds to the minute and never shows less than 1m. */
 export function formatDuration(ms: number): string {
   const minutes = Math.max(1, Math.round(ms / MINUTE_MS));
-  const hours = Math.floor((minutes * MINUTE_MS) / HOUR_MS);
+  const days = Math.floor((minutes * MINUTE_MS) / DAY_MS);
+  const hours = Math.floor((minutes * MINUTE_MS) / HOUR_MS) % 24;
   const rest = minutes % 60;
-  if (hours === 0) return `${rest}m`;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  const parts = [
+    days > 0 ? `${days}d` : '',
+    hours > 0 ? `${hours}h` : '',
+    rest > 0 ? `${rest}m` : '',
+  ];
+  return parts.filter(Boolean).join(' ');
 }
 
 export function formatIncidentDuration(start: string, end: string): string {

@@ -7,7 +7,7 @@ import {
   formatRange,
   formatTime,
 } from './format';
-import { HOUR_MS, MINUTE_MS } from './time';
+import { DAY_MS, HOUR_MS, MINUTE_MS } from './time';
 
 describe('formatDay', () => {
   it('renders a day key without shifting by timezone', () => {
@@ -66,7 +66,34 @@ describe('formatDuration', () => {
   });
 });
 
+describe('formatDuration with days', () => {
+  it('AC1: starts with days from 24 hours', () => {
+    expect(formatDuration(27 * HOUR_MS + 10 * MINUTE_MS)).toBe('1d 3h 10m');
+  });
+
+  it('AC2: leaves out zero parts', () => {
+    expect(formatDuration(2 * DAY_MS)).toBe('2d');
+    expect(formatDuration(DAY_MS + 4 * HOUR_MS)).toBe('1d 4h');
+    expect(formatDuration(DAY_MS + 15 * MINUTE_MS)).toBe('1d 15m');
+  });
+
+  it('AC3: keeps durations under 24 hours unchanged', () => {
+    expect(formatDuration(DAY_MS - MINUTE_MS)).toBe('23h 59m');
+    expect(formatDuration(45 * MINUTE_MS)).toBe('45m');
+  });
+
+  it('AC4: rounds to the minute across the day boundary', () => {
+    expect(formatDuration(DAY_MS - 20_000)).toBe('1d');
+  });
+});
+
 describe('formatIncidentDuration', () => {
+  it('AC5: shows days for an incident longer than a day', () => {
+    expect(formatIncidentDuration('2026-09-10T14:05:00Z', '2026-09-11T17:15:00Z')).toBe(
+      '1d 3h 10m',
+    );
+  });
+
   it('measures between two instants', () => {
     expect(formatIncidentDuration('2026-08-19T13:02:00Z', '2026-08-19T16:08:00Z')).toBe('3h 6m');
   });
