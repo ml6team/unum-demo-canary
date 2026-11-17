@@ -57,6 +57,23 @@ export function groupByDay(incidents: Incident[]): DayGroup[] {
   return [...groups].map(([day, list]) => ({ day, incidents: list }));
 }
 
+/**
+ * Day groups of the past incidents. With a service, each group keeps only the incidents
+ * that affect it; a day whose incidents all affect other services stays as an empty group.
+ */
+export function historyGroups(
+  incidents: Incident[],
+  now: Date,
+  serviceId: string | null,
+): DayGroup[] {
+  const groups = groupByDay(pastIncidents(incidents, now));
+  if (serviceId === null) return groups;
+  return groups.map((group) => ({
+    day: group.day,
+    incidents: group.incidents.filter((i) => i.affectedServiceIds.includes(serviceId)),
+  }));
+}
+
 export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
   return [...incident.updates].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 }
