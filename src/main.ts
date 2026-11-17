@@ -1,12 +1,12 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
+import { searchWithService, serviceFromSearch } from './lib/filter';
 import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
-  groupByDay,
+  historyGroups,
   incidentState,
-  pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
@@ -185,9 +185,9 @@ function renderMaintenance(): void {
   );
 }
 
-function renderHistory(): void {
-  const groups = groupByDay(pastIncidents(incidents, NOW));
-  if (groups.length === 0) {
+function renderHistory(serviceId: string | null): void {
+  const groups = historyGroups(incidents, NOW, serviceId);
+  if (groups.every((group) => group.incidents.length === 0)) {
     byId('days').replaceChildren(
       el('p', { class: 'empty' }, ['No incidents reported in the last 90 days.']),
     );
@@ -199,14 +199,36 @@ function renderHistory(): void {
         el('h3', { class: 'day-heading', id: `day-${group.day}` }, [
           time(group.day, formatDay(group.day)),
         ]),
-        el(
-          'div',
-          { class: 'day-incidents' },
-          group.incidents.map((i) => incidentDetails(i)),
-        ),
+        group.incidents.length === 0
+          ? el('p', { class: 'empty' }, ['No incidents reported'])
+          : el(
+              'div',
+              { class: 'day-incidents' },
+              group.incidents.map((i) => incidentDetails(i)),
+            ),
       ]),
     ),
   );
+}
+
+function setupFilter(): void {
+  const select = byId('service-filter') as HTMLSelectElement;
+  select.append(
+    el('option', { value: '' }, ['All services']),
+    ...services.map((s) => el('option', { value: s.id }, [s.name])),
+  );
+  const initial = serviceFromSearch(location.search, services);
+  select.value = initial ?? '';
+  select.addEventListener('change', () => {
+    const id = select.value === '' ? null : select.value;
+    history.replaceState(
+      history.state,
+      '',
+      location.pathname + searchWithService(location.search, id) + location.hash,
+    );
+    renderHistory(id);
+  });
+  renderHistory(initial);
 }
 
 renderOverall();
@@ -217,4 +239,4 @@ byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
 );
-renderHistory();
+setupFilter();
