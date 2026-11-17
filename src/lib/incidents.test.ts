@@ -3,6 +3,7 @@ import {
   activeIncidents,
   affectedServiceNames,
   groupByDay,
+  historyGroups,
   historyStart,
   incidentState,
   pastIncidents,
@@ -153,5 +154,59 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('historyGroups', () => {
+  const list = [
+    incident('api-new', '2026-09-30T10:00:00Z', '2026-09-30T11:00:00Z', {
+      affectedServiceIds: ['api'],
+    }),
+    incident('web-new', '2026-09-30T08:00:00Z', '2026-09-30T09:00:00Z', {
+      affectedServiceIds: ['web'],
+    }),
+    incident('multi', '2026-09-28T23:30:00Z', '2026-09-29T01:00:00Z', {
+      affectedServiceIds: ['web', 'git'],
+    }),
+    incident('maint-git', '2026-09-20T02:00:00Z', '2026-09-20T03:00:00Z', {
+      kind: 'maintenance',
+      affectedServiceIds: ['git'],
+    }),
+    incident('too-old', '2026-05-01T02:00:00Z', '2026-05-01T03:00:00Z'),
+    incident('upcoming', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z'),
+  ];
+
+  it('AC2: null equals the grouping of past incidents', () => {
+    expect(historyGroups(list, NOW, null)).toEqual(groupByDay(pastIncidents(list, NOW)));
+  });
+
+  it('AC3: keeps only incidents and maintenance that affect the service', () => {
+    const groups = historyGroups(list, NOW, 'git');
+    const ids = groups.flatMap((g) => g.incidents.map((i) => i.id));
+    expect(ids).toEqual(['multi', 'maint-git']);
+  });
+
+  it('AC3: keeps an incident that affects several services under each of them', () => {
+    const web = historyGroups(list, NOW, 'web').flatMap((g) => g.incidents.map((i) => i.id));
+    expect(web).toEqual(['web-new', 'multi']);
+  });
+
+  it('AC6: a day with incidents only for other services is an empty group', () => {
+    const groups = historyGroups(list, NOW, 'git');
+    expect(groups.map((g) => g.day)).toEqual(['2026-09-30', '2026-09-28', '2026-09-20']);
+    expect(groups[0]?.incidents).toEqual([]);
+  });
+
+  it('AC3: leaves out incidents outside the window and upcoming ones', () => {
+    const ids = historyGroups(list, NOW, 'api').flatMap((g) => g.incidents.map((i) => i.id));
+    expect(ids).toEqual(['api-new']);
+  });
+
+  it('AC3: an incident spanning midnight stays on its start day', () => {
+    const groups = historyGroups(list, NOW, 'git');
+    expect(groups.find((g) => g.day === '2026-09-28')?.incidents.map((i) => i.id)).toEqual([
+      'multi',
+    ]);
+    expect(groups.some((g) => g.day === '2026-09-29')).toBe(false);
   });
 });
