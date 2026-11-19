@@ -12,11 +12,13 @@ src/
     status.ts     worstStatus, overallStatus, STATUS_LABEL, UPDATE_LABEL
     incidents.ts  incidentState, pastIncidents, upcomingMaintenance, activeIncidents, groupByDay
     format.ts     day, time, range and duration formatting (always UTC)
+    contrast.ts   contrastRatio and themeColours (WCAG contrast), used by the dark theme tests
+    feed.ts       buildAtomFeed: the Atom feed of past incidents; vite.config.ts writes it to dist/feed.xml
     fixtures.test.ts  consistency checks on the JSON fixtures
   data/           JSON fixtures and their typed exports (index.ts)
     services.json   the six services and their current status
     incidents.json  incidents and maintenance windows over the last 90 days, plus upcoming maintenance
-    index.ts        typed exports and NOW, the fixed current time of the page
+    index.ts        typed exports, NOW (the fixed current time of the page) and SITE_URL
   main.ts         DOM rendering only
   style.css       all styles; colours are CSS custom properties with a dark-mode override
 ```
@@ -31,6 +33,7 @@ src/
 - No new runtime dependencies. Dev dependencies only when unavoidable.
 - Formatting and lint are Biome. `npm run format` fixes what it can; `npm run lint` must be clean.
 - New UI must work in light and dark mode, at desktop and phone width (375px), and stay keyboard accessible: semantic headings, native `<details>` or real buttons for anything interactive, visible focus.
+- Incident ids in `incidents.json` are public: they are the feed's entry ids. Never rename one.
 - Keep fixtures consistent. `src/lib/fixtures.test.ts` enforces that ids are unique, services referenced by incidents exist, past incidents fall inside the 90-day window, and a service is non-operational exactly when an active incident affects it.
 
 ## Before opening a PR

@@ -12,7 +12,9 @@ Requires Node 22 or later.
 npm ci
 npm run dev        # http://localhost:5173/unum-demo-canary/
 npm test
-npm run build      # outputs dist/
+npm run build      # outputs dist/, including dist/feed.xml
 ```
+
+`npm run build` also writes the Atom feed of the last 90 days to `dist/feed.xml`. The dev server does not serve it, so the "Subscribe" link returns 404 in `npm run dev`.
 
 Pushes to `main` deploy to GitHub Pages. See `AGENTS.md` for project conventions.
