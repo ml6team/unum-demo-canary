@@ -105,3 +105,22 @@ export function segmentLabel(day: UptimeDay): string {
   const titles = day.incidents.map((i) => i.title).join(', ');
   return `${date} · ${STATUS_LABEL[day.status]} · ${titles}`;
 }
+
+/**
+ * The index of the segment to focus after `key`, or undefined when the key does not move focus.
+ * Arrow keys move one day and stop at the ends; Home and End jump to the ends.
+ */
+export function nextSegmentIndex(current: number, count: number, key: string): number | undefined {
+  switch (key) {
+    case 'ArrowLeft':
+      return Math.max(current - 1, 0);
+    case 'ArrowRight':
+      return Math.min(current + 1, count - 1);
+    case 'Home':
+      return 0;
+    case 'End':
+      return count - 1;
+    default:
+      return undefined;
+  }
+}

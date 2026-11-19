@@ -16,9 +16,9 @@ import {
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
-import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
+import { LEGEND_STATUSES, overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
-import { segmentLabel, uptimeHistory } from './lib/uptime';
+import { nextSegmentIndex, segmentLabel, uptimeHistory } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -132,13 +132,7 @@ function uptimeBar(service: Service): HTMLElement {
     const list = visible();
     const current = list.indexOf(event.target as HTMLElement);
     if (current === -1) return;
-    const moves: Record<string, number> = {
-      ArrowLeft: Math.max(current - 1, 0),
-      ArrowRight: Math.min(current + 1, list.length - 1),
-      Home: 0,
-      End: list.length - 1,
-    };
-    const next = moves[event.key];
+    const next = nextSegmentIndex(current, list.length, event.key);
     if (next === undefined) return;
     event.preventDefault();
     focusSegment(list[next]);
@@ -173,9 +167,8 @@ function serviceRow(service: Service): HTMLLIElement {
 }
 
 function renderLegend(): void {
-  const statuses: ServiceStatus[] = ['operational', 'degraded', 'partial-outage', 'major-outage'];
   byId('legend').replaceChildren(
-    ...statuses.map((status) =>
+    ...LEGEND_STATUSES.map((status) =>
       el('li', { class: `legend-item tone-${status}` }, [
         el('span', { class: 'swatch', 'aria-hidden': 'true' }),
         STATUS_LABEL[status],
