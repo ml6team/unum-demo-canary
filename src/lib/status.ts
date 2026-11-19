@@ -14,6 +14,14 @@ export const STATUS_LABEL: Record<ServiceStatus, string> = {
   'major-outage': 'Major outage',
 };
 
+/** The statuses a legend names, from best to worst. */
+export const LEGEND_STATUSES: ServiceStatus[] = [
+  'operational',
+  'degraded',
+  'partial-outage',
+  'major-outage',
+];
+
 const OVERALL_TITLE: Record<ServiceStatus, string> = {
   operational: 'All systems operational',
   degraded: 'Some systems are experiencing degraded performance',

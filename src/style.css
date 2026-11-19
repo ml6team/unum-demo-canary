@@ -340,10 +340,16 @@ a {
 
 .service {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 20px;
+}
+
+.service-main {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 20px;
 }
 
 .service + .service {
@@ -362,6 +368,86 @@ a {
 .service-description {
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.uptime {
+  position: relative;
+  display: grid;
+  gap: 6px;
+}
+
+.uptime-percent {
+  font-size: 13px;
+  font-weight: 600;
+  justify-self: end;
+}
+
+.uptime-bar {
+  display: flex;
+  gap: 2px;
+  height: 28px;
+}
+
+.segment {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--tone-solid);
+  cursor: default;
+}
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgb(31 35 40 / 0.18);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.tooltip[hidden] {
+  display: none;
+}
+
+.uptime-captions {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.caption-start-narrow {
+  display: none;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-muted);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--tone-solid);
 }
 
 .status {
@@ -651,13 +737,26 @@ a {
   }
 
   .card-head,
-  .service {
+  .service,
+  .legend {
     padding-right: 16px;
     padding-left: 16px;
   }
 
-  .service {
+  .service-main {
     align-items: flex-start;
+  }
+
+  .segment:not(:nth-last-child(-n + 30)) {
+    display: none;
+  }
+
+  .caption-start {
+    display: none;
+  }
+
+  .caption-start-narrow {
+    display: inline;
   }
 
   .status {
