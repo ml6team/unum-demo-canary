@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compareSeverity, overallStatus, STATUS_LABEL, UPDATE_LABEL, worstStatus } from './status';
+import {
+  compareSeverity,
+  LEGEND_STATUSES,
+  overallStatus,
+  STATUS_LABEL,
+  UPDATE_LABEL,
+  worstStatus,
+} from './status';
 import type { Service, ServiceStatus } from './types';
 
 function service(id: string, status: ServiceStatus): Service {
@@ -67,5 +74,17 @@ describe('UPDATE_LABEL', () => {
   it('labels incident and maintenance updates', () => {
     expect(UPDATE_LABEL.investigating).toBe('Investigating');
     expect(UPDATE_LABEL['in-progress']).toBe('In progress');
+  });
+});
+
+describe('LEGEND_STATUSES', () => {
+  it('AC6: lists the four segment colours from operational to major outage', () => {
+    expect(LEGEND_STATUSES).toEqual(['operational', 'degraded', 'partial-outage', 'major-outage']);
+    expect(LEGEND_STATUSES.map((s) => STATUS_LABEL[s])).toEqual([
+      'Operational',
+      'Degraded performance',
+      'Partial outage',
+      'Major outage',
+    ]);
   });
 });
