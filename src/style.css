@@ -229,6 +229,12 @@ a {
   font-weight: 450;
 }
 
+.header-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .header-link {
   border-radius: 4px;
   font-size: 14px;

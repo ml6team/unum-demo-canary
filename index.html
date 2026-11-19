@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Current status and incident history for Northwind services." />
+    <link rel="alternate" type="application/atom+xml" title="Northwind status" href="feed.xml" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Northwind status</title>
   </head>
@@ -19,7 +20,10 @@
           <span class="brand-name">Northwind</span>
           <span class="brand-suffix">status</span>
         </a>
-        <a class="header-link" href="#history">Incident history</a>
+        <nav class="header-links" aria-label="Page links">
+          <a class="header-link" href="#history">Incident history</a>
+          <a class="header-link" href="feed.xml">Subscribe</a>
+        </nav>
       </div>
     </header>
     <main class="container page">
