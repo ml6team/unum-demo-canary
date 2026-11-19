@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
 import { formatUptime } from './format';
 import type { Impact, Incident, IncidentKind } from './types';
-import { uptimeHistory } from './uptime';
+import { segmentLabel, uptimeHistory } from './uptime';
 
 const WINDOW_MINUTES = 89.5 * 24 * 60;
 
@@ -222,4 +222,37 @@ describe('fixture data', () => {
       expect(formatUptime(uptimePercent)).toBe(want.uptime);
     });
   }
+});
+
+describe('segmentLabel', () => {
+  const day = (iso: string) =>
+    uptimeHistory('api', incidentsOf, NOW).days.find((d) => d.day === iso);
+  const incidentsOf = [
+    {
+      ...make('a', 'partial-outage', '2026-09-12T10:00:00Z', '2026-09-12T10:30:00Z'),
+      title: 'Elevated API error rates',
+    },
+    { ...make('b', 'degraded', '2026-09-13T10:00:00Z', '2026-09-13T10:30:00Z'), title: 'Slow API' },
+    {
+      ...make('c', 'degraded', '2026-09-13T11:00:00Z', '2026-09-13T11:30:00Z'),
+      title: 'Slow webhooks',
+    },
+  ];
+
+  it('AC5: names the date and that there were no incidents', () => {
+    const d = day('2026-09-11');
+    expect(d && segmentLabel(d)).toBe('Sep 11, 2026 · No incidents');
+  });
+
+  it('AC5: names the date, the impact and the incident', () => {
+    const d = day('2026-09-12');
+    expect(d && segmentLabel(d)).toBe('Sep 12, 2026 · Partial outage · Elevated API error rates');
+  });
+
+  it('AC5: lists the titles of several incidents', () => {
+    const d = day('2026-09-13');
+    expect(d && segmentLabel(d)).toBe(
+      'Sep 13, 2026 · Degraded performance · Slow API, Slow webhooks',
+    );
+  });
 });
