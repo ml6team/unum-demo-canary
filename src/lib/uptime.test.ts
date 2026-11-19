@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
 import { formatUptime } from './format';
 import type { Impact, Incident, IncidentKind } from './types';
-import { segmentLabel, uptimeHistory } from './uptime';
+import { nextSegmentIndex, segmentLabel, uptimeHistory } from './uptime';
 
 const WINDOW_MINUTES = 89.5 * 24 * 60;
 
@@ -254,5 +254,24 @@ describe('segmentLabel', () => {
     expect(d && segmentLabel(d)).toBe(
       'Sep 13, 2026 · Degraded performance · Slow API, Slow webhooks',
     );
+  });
+});
+
+describe('nextSegmentIndex', () => {
+  it('AC9: ArrowLeft and ArrowRight move one day and stop at the ends', () => {
+    expect(nextSegmentIndex(5, 90, 'ArrowLeft')).toBe(4);
+    expect(nextSegmentIndex(5, 90, 'ArrowRight')).toBe(6);
+    expect(nextSegmentIndex(0, 90, 'ArrowLeft')).toBe(0);
+    expect(nextSegmentIndex(89, 90, 'ArrowRight')).toBe(89);
+  });
+
+  it('AC9: Home and End jump to the first and last day', () => {
+    expect(nextSegmentIndex(40, 90, 'Home')).toBe(0);
+    expect(nextSegmentIndex(40, 90, 'End')).toBe(89);
+  });
+
+  it('AC9: other keys do not move focus', () => {
+    expect(nextSegmentIndex(40, 90, 'a')).toBeUndefined();
+    expect(nextSegmentIndex(40, 90, 'Tab')).toBeUndefined();
   });
 });
