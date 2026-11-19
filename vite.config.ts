@@ -22,5 +22,6 @@ export default defineConfig({
   plugins: [atomFeed()],
   test: {
     include: ['src/**/*.test.ts'],
+    css: { include: [/style\.css/] },
   },
 });

@@ -12,6 +12,7 @@ src/
     status.ts     worstStatus, overallStatus, STATUS_LABEL, UPDATE_LABEL
     incidents.ts  incidentState, pastIncidents, upcomingMaintenance, activeIncidents, groupByDay
     format.ts     day, time, range and duration formatting (always UTC)
+    contrast.ts   contrastRatio and themeColours (WCAG contrast), used by the dark theme tests
     feed.ts       buildAtomFeed: the Atom feed of past incidents; vite.config.ts writes it to dist/feed.xml
     fixtures.test.ts  consistency checks on the JSON fixtures
   data/           JSON fixtures and their typed exports (index.ts)
