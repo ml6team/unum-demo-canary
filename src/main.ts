@@ -1,6 +1,12 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentDuration,
+  formatRange,
+  formatUptime,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
@@ -12,6 +18,7 @@ import {
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
+import { uptimeHistory } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -81,17 +88,48 @@ function renderOverall(): void {
   );
 }
 
-function serviceRow(service: Service): HTMLLIElement {
-  return el('li', { class: 'service' }, [
-    el('div', { class: 'service-text' }, [
-      el('h3', { class: 'service-name' }, [service.name]),
-      el('p', { class: 'service-description' }, [service.description]),
-    ]),
-    el('span', { class: `status tone-${service.status}` }, [
-      icon(service.status),
-      STATUS_LABEL[service.status],
+function uptimeBar(service: Service): HTMLElement {
+  const history = uptimeHistory(service.id, incidents, NOW);
+  const segments = history.days.map((day) =>
+    el('button', { type: 'button', class: `segment tone-${day.status}` }),
+  );
+  return el('div', { class: 'uptime' }, [
+    el('p', { class: 'uptime-percent' }, [`${formatUptime(history.uptimePercent)} uptime`]),
+    el('div', { class: 'uptime-bar' }, segments),
+    el('p', { class: 'uptime-captions muted' }, [
+      el('span', { class: 'caption-start' }, ['90 days ago']),
+      el('span', { class: 'caption-start-narrow' }, ['30 days ago']),
+      el('span', {}, ['Today']),
     ]),
   ]);
+}
+
+function serviceRow(service: Service): HTMLLIElement {
+  return el('li', { class: 'service' }, [
+    el('div', { class: 'service-main' }, [
+      el('div', { class: 'service-text' }, [
+        el('h3', { class: 'service-name' }, [service.name]),
+        el('p', { class: 'service-description' }, [service.description]),
+      ]),
+      el('span', { class: `status tone-${service.status}` }, [
+        icon(service.status),
+        STATUS_LABEL[service.status],
+      ]),
+    ]),
+    uptimeBar(service),
+  ]);
+}
+
+function renderLegend(): void {
+  const statuses: ServiceStatus[] = ['operational', 'degraded', 'partial-outage', 'major-outage'];
+  byId('legend').replaceChildren(
+    ...statuses.map((status) =>
+      el('li', { class: `legend-item tone-${status}` }, [
+        el('span', { class: 'swatch', 'aria-hidden': 'true' }),
+        STATUS_LABEL[status],
+      ]),
+    ),
+  );
 }
 
 function timeline(incident: Incident): HTMLOListElement {
@@ -213,6 +251,7 @@ renderOverall();
 renderActive();
 renderMaintenance();
 byId('services').replaceChildren(...services.map(serviceRow));
+renderLegend();
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
