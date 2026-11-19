@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import html from '../../index.html?raw';
 import { incidents, NOW, SITE_URL, services } from '../data';
 import { buildAtomFeed } from './feed';
 import { formatRange } from './format';
@@ -165,5 +166,19 @@ describe('buildAtomFeed', () => {
     const feed = buildAtomFeed([], svc, NOW, SITE_URL);
     expect(entries(feed)).toEqual([]);
     expect(feed).toContain('</feed>');
+  });
+});
+
+describe('feed links in index.html', () => {
+  it('AC4: the head has a rel="alternate" Atom link to feed.xml', () => {
+    const head = /<head>[\s\S]*<\/head>/.exec(html)?.[0] ?? '';
+    expect(head).toMatch(
+      /<link\s+rel="alternate"\s+type="application\/atom\+xml"[^>]*href="feed\.xml"/,
+    );
+  });
+
+  it('AC4: the page has a visible "Subscribe" link to feed.xml', () => {
+    const body = /<body>[\s\S]*<\/body>/.exec(html)?.[0] ?? '';
+    expect(body).toMatch(/<a [^>]*href="feed\.xml"[^>]*>\s*Subscribe\s*<\/a>/);
   });
 });
