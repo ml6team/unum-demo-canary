@@ -1,5 +1,6 @@
+import { formatDay } from './format';
 import { HISTORY_DAYS, historyStart, incidentState } from './incidents';
-import { worstStatus } from './status';
+import { STATUS_LABEL, worstStatus } from './status';
 import { addUtcDays, MINUTE_MS, utcDayKey } from './time';
 import type { Incident, ServiceStatus } from './types';
 
@@ -95,4 +96,12 @@ export function uptimeHistory(
   const downMinutes = unionLength(downtime) / MINUTE_MS;
   const windowMinutes = (windowEnd - windowStart) / MINUTE_MS;
   return { days: result, uptimePercent: 100 - (downMinutes / windowMinutes) * 100 };
+}
+
+/** "Sep 12, 2026 · Partial outage · Elevated API error rates", or "Sep 12, 2026 · No incidents". */
+export function segmentLabel(day: UptimeDay): string {
+  const date = formatDay(day.day);
+  if (day.incidents.length === 0) return `${date} · No incidents`;
+  const titles = day.incidents.map((i) => i.title).join(', ');
+  return `${date} · ${STATUS_LABEL[day.status]} · ${titles}`;
 }
