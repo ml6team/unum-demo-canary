@@ -18,7 +18,7 @@ import {
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
-import { uptimeHistory } from './lib/uptime';
+import { segmentLabel, uptimeHistory } from './lib/uptime';
 
 type Child = Node | string;
 type Tone = ServiceStatus | 'maintenance';
@@ -90,12 +90,64 @@ function renderOverall(): void {
 
 function uptimeBar(service: Service): HTMLElement {
   const history = uptimeHistory(service.id, incidents, NOW);
-  const segments = history.days.map((day) =>
-    el('button', { type: 'button', class: `segment tone-${day.status}` }),
+  const tooltip = el('div', { class: 'tooltip', role: 'status', hidden: '' });
+  const last = history.days.length - 1;
+  const segments = history.days.map((day, index) =>
+    el('button', {
+      type: 'button',
+      class: `segment tone-${day.status}`,
+      'aria-label': segmentLabel(day),
+      tabindex: index === last ? '0' : '-1',
+    }),
   );
+
+  const show = (segment: HTMLElement): void => {
+    tooltip.textContent = segment.getAttribute('aria-label');
+    tooltip.hidden = false;
+  };
+  const hide = (): void => {
+    tooltip.hidden = true;
+  };
+  const focusSegment = (target: HTMLElement | undefined): void => {
+    if (!target) return;
+    for (const segment of segments) segment.tabIndex = segment === target ? 0 : -1;
+    target.focus();
+  };
+  const visible = (): HTMLElement[] => segments.filter((segment) => segment.offsetParent !== null);
+
+  const bar = el(
+    'div',
+    { class: 'uptime-bar', role: 'group', 'aria-label': `${service.name} uptime` },
+    segments,
+  );
+  for (const segment of segments) {
+    segment.addEventListener('mouseenter', () => show(segment));
+    segment.addEventListener('mouseleave', () => {
+      if (document.activeElement !== segment) hide();
+    });
+    segment.addEventListener('focus', () => show(segment));
+    segment.addEventListener('blur', hide);
+  }
+  bar.addEventListener('keydown', (event) => {
+    const list = visible();
+    const current = list.indexOf(event.target as HTMLElement);
+    if (current === -1) return;
+    const moves: Record<string, number> = {
+      ArrowLeft: Math.max(current - 1, 0),
+      ArrowRight: Math.min(current + 1, list.length - 1),
+      Home: 0,
+      End: list.length - 1,
+    };
+    const next = moves[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    focusSegment(list[next]);
+  });
+
   return el('div', { class: 'uptime' }, [
     el('p', { class: 'uptime-percent' }, [`${formatUptime(history.uptimePercent)} uptime`]),
-    el('div', { class: 'uptime-bar' }, segments),
+    bar,
+    tooltip,
     el('p', { class: 'uptime-captions muted' }, [
       el('span', { class: 'caption-start' }, ['90 days ago']),
       el('span', { class: 'caption-start-narrow' }, ['30 days ago']),
