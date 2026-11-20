@@ -47,3 +47,19 @@ All five must pass. CI runs the same steps as the required `ci` check.
 - Commits: Conventional Commits (`feat:`, `fix:`, `test:`, `refactor:`, `chore:`, `docs:`).
 - PR title: `<type>: <summary> (<LINEAR-ID>)`. Example: `feat: 90-day uptime per service (UNUSFD-12)`.
 - PR body: link the Linear ticket and the approved design, then summarise how the change matches the design, and list any deviation from it with the reason.
+
+## Production safety
+
+- Merging to `main` deploys the public site to GitHub Pages (`deploy.yml`). Never merge, dispatch `deploy`, or unpublish Pages yourself; a human does.
+- Incident or bad deploy: follow [Emergency stop and rollback](docs/project-map/delivery.md#emergency-stop-and-rollback-github-pages-production) and escalate to a human maintainer (`.github/CODEOWNERS`).
+
+## Pitfalls
+
+- The page shows a frozen `NOW`, not today's date; do not "fix" it without a decision.
+- `main` history appears to have been rewritten (earlier deploy SHAs are absent): do not assume a deploy run's `head_sha` exists locally.
+- Architecture, business rules and pipelines: see [docs/project-map/](docs/project-map/README.md).
+
+## Escalate when
+
+- A change needs a new runtime dependency, a real data source, or a change to deploy/CI configuration.
+- Branch protection or the `ci` required check appears missing or different from described here.
