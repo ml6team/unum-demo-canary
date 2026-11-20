@@ -56,7 +56,7 @@ All five must pass. CI runs the same steps as the required `ci` check.
 ## Pitfalls
 
 - The page shows a frozen `NOW`, not today's date; do not "fix" it without a decision.
-- `main` history was rewritten at some point: do not assume a deploy run's `head_sha` exists locally.
+- `main` history appears to have been rewritten (earlier deploy SHAs are absent): do not assume a deploy run's `head_sha` exists locally.
 - Architecture, business rules and pipelines: see [docs/project-map/](docs/project-map/README.md).
 
 ## Escalate when
