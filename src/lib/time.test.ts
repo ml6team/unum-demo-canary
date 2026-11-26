@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { addUtcDays, DAY_MS, durationMs, HOUR_MS, startOfUtcDay, utcDayKey } from './time';
+import {
+  addUtcDays,
+  DAY_MS,
+  durationMs,
+  HOUR_MS,
+  startOfUtcDay,
+  utcDayKey,
+  utcDaysBetween,
+} from './time';
 
 describe('utcDayKey', () => {
   it('returns the UTC calendar day', () => {
@@ -37,5 +45,28 @@ describe('durationMs', () => {
 
   it('has a day constant of 24 hours', () => {
     expect(DAY_MS).toBe(24 * HOUR_MS);
+  });
+});
+
+describe('utcDaysBetween', () => {
+  it('AC1: is 0 on the same UTC day', () => {
+    expect(utcDaysBetween('2026-10-01T00:00:00Z', '2026-10-01T23:59:59Z')).toBe(0);
+  });
+
+  it('AC1: counts one boundary across midnight UTC', () => {
+    expect(utcDaysBetween('2026-10-01T23:59:00Z', '2026-10-02T00:01:00Z')).toBe(1);
+  });
+
+  it('AC1: counts several days', () => {
+    expect(utcDaysBetween('2026-10-01T12:00:00Z', '2026-10-08T06:00:00Z')).toBe(7);
+  });
+
+  it('AC1: is negative when to is before from', () => {
+    expect(utcDaysBetween('2026-10-08T06:00:00Z', '2026-10-01T12:00:00Z')).toBe(-7);
+    expect(utcDaysBetween('2026-10-02T00:01:00Z', '2026-10-01T23:59:00Z')).toBe(-1);
+  });
+
+  it('AC1: uses UTC days, not the offset the timestamp was written in', () => {
+    expect(utcDaysBetween('2026-10-01T23:30:00-02:00', '2026-10-02T00:10:00Z')).toBe(0);
   });
 });
