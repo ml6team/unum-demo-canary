@@ -14,10 +14,15 @@ export function checkNodeVersion(version) {
   };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { ok, message } = checkNodeVersion(process.versions.node);
+export function run(version, write = (text) => console.error(text)) {
+  const { ok, message } = checkNodeVersion(version);
   if (!ok) {
-    console.error(message);
-    process.exit(1);
+    write(message);
+    return 1;
   }
+  return 0;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exit(run(process.versions.node));
 }

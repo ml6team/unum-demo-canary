@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import readme from '../../README.md?raw';
-import { checkNodeVersion } from '../../scripts/check-node-version.mjs';
+import { checkNodeVersion, run } from '../../scripts/check-node-version.mjs';
 
 describe('checkNodeVersion', () => {
   it('AC1: accepts Node 22 and 24', () => {
@@ -18,6 +18,22 @@ describe('checkNodeVersion', () => {
     const { message } = checkNodeVersion('v26.9.0');
     expect(message).toContain('26.9.0');
     expect(message).toContain('22 or 24');
+  });
+});
+
+describe('run', () => {
+  it('AC2: exits non-zero and prints the message on an unsupported version', () => {
+    const printed: string[] = [];
+    expect(run('26.9.0', (text) => printed.push(text))).toBe(1);
+    expect(printed).toHaveLength(1);
+    expect(printed[0]).toContain('26.9.0');
+    expect(printed[0]).toContain('22 or 24');
+  });
+
+  it('AC1: exits zero and prints nothing on a supported version', () => {
+    const printed: string[] = [];
+    expect(run('24.1.0', (text) => printed.push(text))).toBe(0);
+    expect(printed).toEqual([]);
   });
 });
 
