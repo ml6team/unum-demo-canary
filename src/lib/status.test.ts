@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { compareSeverity, overallStatus, STATUS_LABEL, UPDATE_LABEL, worstStatus } from './status';
+import { services as fixtureServices } from '../data';
+import {
+  compareSeverity,
+  operationalSummary,
+  overallStatus,
+  STATUS_LABEL,
+  UPDATE_LABEL,
+  worstStatus,
+} from './status';
 import type { Service, ServiceStatus } from './types';
 
 function service(id: string, status: ServiceStatus): Service {
@@ -67,5 +75,27 @@ describe('UPDATE_LABEL', () => {
   it('labels incident and maintenance updates', () => {
     expect(UPDATE_LABEL.investigating).toBe('Investigating');
     expect(UPDATE_LABEL['in-progress']).toBe('In progress');
+  });
+});
+
+describe('operationalSummary', () => {
+  it('AC1: reads "<n> of <total> operational"', () => {
+    const result = operationalSummary([
+      service('api', 'operational'),
+      service('web', 'degraded'),
+      service('git', 'operational'),
+    ]);
+    expect(result).toBe('2 of 3 operational');
+  });
+
+  it('AC1: counts none operational as 0', () => {
+    expect(operationalSummary([service('api', 'major-outage')])).toBe('0 of 1 operational');
+  });
+
+  it('AC2: matches the operational rows of the current data', () => {
+    const operational = fixtureServices.filter((s) => s.status === 'operational').length;
+    expect(operationalSummary(fixtureServices)).toBe(
+      `${operational} of ${fixtureServices.length} operational`,
+    );
   });
 });
