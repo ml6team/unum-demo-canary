@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
+  durationSoFar,
   affectedServiceNames,
   groupByDay,
   historyStart,
@@ -153,5 +154,27 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('durationSoFar', () => {
+  it('formats how long an active incident has lasted up to now', () => {
+    const active = incident('a', '2026-10-01T09:25:00Z', null);
+    expect(durationSoFar(active, NOW)).toBe('2h 35m');
+  });
+
+  it('never shows less than 1m', () => {
+    const active = incident('a', '2026-10-01T11:59:40Z', null);
+    expect(durationSoFar(active, NOW)).toBe('1m');
+  });
+
+  it('is null for a resolved incident', () => {
+    const resolved = incident('r', '2026-10-01T09:00:00Z', '2026-10-01T10:00:00Z');
+    expect(durationSoFar(resolved, NOW)).toBeNull();
+  });
+
+  it('is null for an upcoming window', () => {
+    const upcoming = incident('u', '2026-10-02T09:00:00Z', '2026-10-02T10:00:00Z');
+    expect(durationSoFar(upcoming, NOW)).toBeNull();
   });
 });
