@@ -364,6 +364,12 @@ a {
   font-size: 13px;
 }
 
+.service-incidents {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .status {
   display: inline-flex;
   flex: none;

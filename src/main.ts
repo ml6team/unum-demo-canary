@@ -1,11 +1,18 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentCount,
+  formatIncidentDuration,
+  formatRange,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
   groupByDay,
   incidentState,
+  pastIncidentCountByService,
   pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
@@ -81,11 +88,12 @@ function renderOverall(): void {
   );
 }
 
-function serviceRow(service: Service): HTMLLIElement {
+function serviceRow(service: Service, count: number): HTMLLIElement {
   return el('li', { class: 'service' }, [
     el('div', { class: 'service-text' }, [
       el('h3', { class: 'service-name' }, [service.name]),
       el('p', { class: 'service-description' }, [service.description]),
+      el('p', { class: 'service-incidents' }, [formatIncidentCount(count)]),
     ]),
     el('span', { class: `status tone-${service.status}` }, [
       icon(service.status),
@@ -212,7 +220,10 @@ function renderHistory(): void {
 renderOverall();
 renderActive();
 renderMaintenance();
-byId('services').replaceChildren(...services.map(serviceRow));
+const incidentCounts = pastIncidentCountByService(incidents, services, NOW);
+byId('services').replaceChildren(
+  ...services.map((service) => serviceRow(service, incidentCounts[service.id] ?? 0)),
+);
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),

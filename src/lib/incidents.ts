@@ -65,3 +65,19 @@ export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
 export function affectedServiceNames(incident: Incident, services: Service[]): string[] {
   return services.filter((s) => incident.affectedServiceIds.includes(s.id)).map((s) => s.name);
 }
+
+/** Number of past incidents (not maintenance) in the history window that affect each service id. */
+export function pastIncidentCountByService(
+  incidents: Incident[],
+  services: Service[],
+  now: Date,
+): Record<string, number> {
+  const counts: Record<string, number> = Object.fromEntries(services.map((s) => [s.id, 0]));
+  for (const incident of pastIncidents(incidents, now)) {
+    if (incident.kind !== 'incident') continue;
+    for (const id of new Set(incident.affectedServiceIds)) {
+      if (id in counts) counts[id] = (counts[id] ?? 0) + 1;
+    }
+  }
+  return counts;
+}

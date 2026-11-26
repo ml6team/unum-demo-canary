@@ -49,3 +49,9 @@ export function formatDuration(ms: number): string {
 export function formatIncidentDuration(start: string, end: string): string {
   return formatDuration(durationMs(start, end));
 }
+
+/** "No incidents in the last 90 days", "1 incident in the last 90 days", "3 incidents in ..." */
+export function formatIncidentCount(count: number): string {
+  if (count === 0) return 'No incidents in the last 90 days';
+  return `${count} ${count === 1 ? 'incident' : 'incidents'} in the last 90 days`;
+}
