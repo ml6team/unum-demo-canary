@@ -5,6 +5,7 @@ import {
   groupByDay,
   historyStart,
   incidentState,
+  mostIncidentsLabel,
   pastIncidentCountByService,
   pastIncidents,
   upcomingMaintenance,
@@ -188,5 +189,44 @@ describe('pastIncidentCountByService', () => {
   it('AC2: counts an ongoing incident', () => {
     const list = [incident('o', '2026-10-01T08:00:00Z', null, { affectedServiceIds: ['git'] })];
     expect(pastIncidentCountByService(list, services, NOW)).toEqual({ api: 0, web: 0, git: 1 });
+  });
+});
+
+describe('mostIncidentsLabel', () => {
+  const svc = (id: string, name: string): Service => ({
+    id,
+    name,
+    description: '',
+    status: 'operational',
+  });
+  const services = [svc('api', 'API'), svc('web', 'Web app'), svc('git', 'Git')];
+
+  it('AC1: names the service with the most incidents and its count', () => {
+    expect(mostIncidentsLabel({ api: 1, web: 3, git: 2 }, services)).toBe(
+      'Most incidents: Web app (3)',
+    );
+  });
+
+  it('AC2: on a tie names the first tied service in service-list order', () => {
+    expect(mostIncidentsLabel({ git: 2, web: 2, api: 1 }, services)).toBe(
+      'Most incidents: Web app (2)',
+    );
+  });
+
+  it('AC3: uses the counts that the service list shows', () => {
+    const list = [
+      incident('a', '2026-09-20T10:00:00Z', '2026-09-20T11:00:00Z', {
+        affectedServiceIds: ['git'],
+      }),
+      incident('b', '2026-09-10T10:00:00Z', '2026-09-10T11:00:00Z', {
+        affectedServiceIds: ['git', 'web'],
+      }),
+    ];
+    const counts = pastIncidentCountByService(list, services, NOW);
+    expect(mostIncidentsLabel(counts, services)).toBe('Most incidents: Git (2)');
+  });
+
+  it('returns null when no service had an incident', () => {
+    expect(mostIncidentsLabel({ api: 0, web: 0, git: 0 }, services)).toBeNull();
   });
 });
