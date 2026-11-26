@@ -5,11 +5,12 @@ import {
   groupByDay,
   historyStart,
   incidentState,
+  pastIncidentCountByService,
   pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './incidents';
-import type { Incident } from './types';
+import type { Incident, Service } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
 
@@ -153,5 +154,39 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('pastIncidentCountByService', () => {
+  const svc = (id: string): Service => ({
+    id,
+    name: id,
+    description: '',
+    status: 'operational',
+  });
+  const services = [svc('api'), svc('web'), svc('git')];
+
+  it('AC2: counts past incidents per service and gives 0 to services without any', () => {
+    const list = [
+      incident('a', '2026-09-20T10:00:00Z', '2026-09-20T11:00:00Z'),
+      incident('b', '2026-09-10T10:00:00Z', '2026-09-10T11:00:00Z', {
+        affectedServiceIds: ['api', 'web'],
+      }),
+    ];
+    expect(pastIncidentCountByService(list, services, NOW)).toEqual({ api: 2, web: 1, git: 0 });
+  });
+
+  it('AC2: ignores maintenance, upcoming incidents and incidents older than 90 days', () => {
+    const list = [
+      incident('m', '2026-09-20T10:00:00Z', '2026-09-20T11:00:00Z', { kind: 'maintenance' }),
+      incident('u', '2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z'),
+      incident('old', '2026-06-01T10:00:00Z', '2026-06-01T11:00:00Z'),
+    ];
+    expect(pastIncidentCountByService(list, services, NOW)).toEqual({ api: 0, web: 0, git: 0 });
+  });
+
+  it('AC2: counts an ongoing incident', () => {
+    const list = [incident('o', '2026-10-01T08:00:00Z', null, { affectedServiceIds: ['git'] })];
+    expect(pastIncidentCountByService(list, services, NOW)).toEqual({ api: 0, web: 0, git: 1 });
   });
 });

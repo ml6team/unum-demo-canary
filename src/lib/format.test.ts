@@ -3,6 +3,7 @@ import {
   formatDateTime,
   formatDay,
   formatDuration,
+  formatIncidentCount,
   formatIncidentDuration,
   formatRange,
   formatTime,
@@ -69,5 +70,19 @@ describe('formatDuration', () => {
 describe('formatIncidentDuration', () => {
   it('measures between two instants', () => {
     expect(formatIncidentDuration('2026-08-19T13:02:00Z', '2026-08-19T16:08:00Z')).toBe('3h 6m');
+  });
+});
+
+describe('formatIncidentCount', () => {
+  it('AC1: says "No incidents" for none', () => {
+    expect(formatIncidentCount(0)).toBe('No incidents in the last 90 days');
+  });
+
+  it('AC1: uses the singular for one', () => {
+    expect(formatIncidentCount(1)).toBe('1 incident in the last 90 days');
+  });
+
+  it('AC1: uses the plural for several', () => {
+    expect(formatIncidentCount(3)).toBe('3 incidents in the last 90 days');
   });
 });
