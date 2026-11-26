@@ -1,3 +1,4 @@
+import { formatIncidentDuration } from './format';
 import { addUtcDays, startOfUtcDay, utcDayKey } from './time';
 import type { Incident, IncidentUpdate, Service } from './types';
 
@@ -11,6 +12,22 @@ export function incidentState(incident: Incident, now: Date): IncidentState {
     return 'active';
   }
   return 'resolved';
+}
+
+/** How long an active incident has lasted up to `now`, formatted; null when it is not active. */
+export function durationSoFar(incident: Incident, now: Date): string | null {
+  if (incidentState(incident, now) !== 'active') return null;
+  return formatIncidentDuration(incident.startedAt, now.toISOString());
+}
+
+/** The duration text of an incident's meta line: "2h 35m so far" when active, "1h 30m" when resolved, null otherwise. */
+export function durationLabel(incident: Incident, now: Date): string | null {
+  const state = incidentState(incident, now);
+  if (state === 'active') return `${durationSoFar(incident, now)} so far`;
+  if (state === 'resolved' && incident.resolvedAt !== null) {
+    return formatIncidentDuration(incident.startedAt, incident.resolvedAt);
+  }
+  return null;
 }
 
 function newestFirst(a: Incident, b: Incident): number {
