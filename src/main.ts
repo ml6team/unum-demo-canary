@@ -12,6 +12,7 @@ import {
   affectedServiceNames,
   groupByDay,
   incidentState,
+  mostIncidentsLabel,
   pastIncidentCountByService,
   pastIncidents,
   upcomingMaintenance,
@@ -229,3 +230,9 @@ byId('updated').replaceChildren(
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),
 );
 renderHistory();
+const mostIncidents = mostIncidentsLabel(incidentCounts, services);
+if (mostIncidents !== null) {
+  const line = byId('most-incidents');
+  line.textContent = mostIncidents;
+  line.hidden = false;
+}

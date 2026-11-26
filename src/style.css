@@ -370,6 +370,11 @@ a {
   font-size: 13px;
 }
 
+.most-incidents {
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
 .status {
   display: inline-flex;
   flex: none;

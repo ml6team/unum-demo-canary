@@ -81,3 +81,20 @@ export function pastIncidentCountByService(
   }
   return counts;
 }
+
+/** "Most incidents: <service> (<n>)" for the service with the highest count; the first in list order wins a tie. */
+export function mostIncidentsLabel(
+  counts: Record<string, number>,
+  services: Service[],
+): string | null {
+  let top: Service | undefined;
+  let max = 0;
+  for (const service of services) {
+    const count = counts[service.id] ?? 0;
+    if (count > max) {
+      top = service;
+      max = count;
+    }
+  }
+  return top ? `Most incidents: ${top.name} (${max})` : null;
+}
