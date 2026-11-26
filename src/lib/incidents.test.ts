@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
   affectedServiceNames,
+  affectsLabel,
   groupByDay,
   historyStart,
   incidentState,
@@ -153,5 +154,31 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('affectsLabel', () => {
+  const services = [
+    { id: 'api', name: 'API', description: '', status: 'operational' as const },
+    { id: 'web', name: 'Web app', description: '', status: 'operational' as const },
+  ];
+
+  it('AC1: reads "Affects <n> services: <names>"', () => {
+    const subject = incident('a', '2026-09-09T09:12:00Z', null, {
+      affectedServiceIds: ['web', 'api'],
+    });
+    expect(affectsLabel(subject, services)).toBe('Affects 2 services: API, Web app');
+  });
+
+  it('AC2: the number equals the number of names listed, skipping unknown ids', () => {
+    const subject = incident('a', '2026-09-09T09:12:00Z', null, {
+      affectedServiceIds: ['web', 'gone', 'api'],
+    });
+    expect(affectsLabel(subject, services)).toBe('Affects 2 services: API, Web app');
+  });
+
+  it('AC3: one service reads "Affects 1 service: <name>"', () => {
+    const subject = incident('a', '2026-09-09T09:12:00Z', null, { affectedServiceIds: ['api'] });
+    expect(affectsLabel(subject, services)).toBe('Affects 1 service: API');
   });
 });
