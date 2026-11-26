@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
   affectedServiceNames,
+  dayCountLabel,
   groupByDay,
   historyStart,
   incidentState,
@@ -122,6 +123,29 @@ describe('groupByDay', () => {
 
   it('returns no groups for no incidents', () => {
     expect(groupByDay([])).toEqual([]);
+  });
+});
+
+describe('dayCountLabel', () => {
+  it('AC3: a day with one entry reads "1 incident"', () => {
+    expect(dayCountLabel(1)).toBe('1 incident');
+  });
+
+  it('AC1: a day with several entries reads "<n> incidents"', () => {
+    expect(dayCountLabel(2)).toBe('2 incidents');
+    expect(dayCountLabel(5)).toBe('5 incidents');
+  });
+
+  it('AC2: counts the entries a day group lists', () => {
+    const groups = groupByDay([
+      incident('a', '2026-09-09T09:12:00Z', '2026-09-09T11:47:00Z'),
+      incident('b', '2026-09-10T22:40:00Z', '2026-09-11T01:15:00Z'),
+      incident('c', '2026-09-09T18:00:00Z', '2026-09-09T18:30:00Z', { kind: 'maintenance' }),
+    ]);
+    expect(groups.map((g) => dayCountLabel(g.incidents.length))).toEqual([
+      '1 incident',
+      '2 incidents',
+    ]);
   });
 });
 
