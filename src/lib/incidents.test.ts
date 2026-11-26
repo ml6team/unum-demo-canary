@@ -4,11 +4,13 @@ import {
   affectedServiceNames,
   groupByDay,
   historyStart,
+  historySummary,
   incidentState,
   pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
 } from './incidents';
+import { incidents as fixtureIncidents, NOW as FIXTURE_NOW } from '../data';
 import type { Incident } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
@@ -153,5 +155,28 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('historySummary', () => {
+  it('counts several incidents', () => {
+    expect(historySummary(7)).toBe('7 incidents in the last 90 days, times in UTC');
+  });
+
+  it('uses the singular for one incident', () => {
+    expect(historySummary(1)).toBe('1 incident in the last 90 days, times in UTC');
+  });
+
+  it('counts zero incidents', () => {
+    expect(historySummary(0)).toBe('0 incidents in the last 90 days, times in UTC');
+  });
+
+  it('matches the number of incidents listed under the day headings', () => {
+    const listed = groupByDay(pastIncidents(fixtureIncidents, FIXTURE_NOW)).flatMap(
+      (g) => g.incidents,
+    );
+    expect(historySummary(listed.length)).toBe(
+      `${listed.length} incidents in the last 90 days, times in UTC`,
+    );
   });
 });
