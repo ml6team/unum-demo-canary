@@ -148,7 +148,11 @@ function incidentDetails(
       incidentMeta(incident),
       affects(incident),
       ...(showUpdateCount
-        ? [el('p', { class: 'incident-meta' }, [updateCountLabel(incident)])]
+        ? [
+            el('p', { class: 'incident-meta' }, [
+              updateCountLabel({ ...incident, updates: incident.updates.slice(1) }),
+            ]),
+          ]
         : []),
       icon('chevron', 'chevron'),
     ]),
