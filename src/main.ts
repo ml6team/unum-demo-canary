@@ -4,6 +4,7 @@ import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from '
 import {
   activeIncidents,
   affectedServiceNames,
+  durationSoFar,
   groupByDay,
   incidentState,
   pastIncidents,
@@ -114,12 +115,19 @@ function incidentMeta(incident: Incident): HTMLElement {
   const parts: Child[] = [
     time(incident.startedAt, formatRange(incident.startedAt, incident.resolvedAt)),
   ];
-  if (incident.resolvedAt !== null && incidentState(incident, NOW) === 'resolved') {
+  const state = incidentState(incident, NOW);
+  const duration =
+    state === 'active'
+      ? durationSoFar(incident, NOW)
+      : incident.resolvedAt !== null && state === 'resolved'
+        ? formatIncidentDuration(incident.startedAt, incident.resolvedAt)
+        : null;
+  if (duration !== null) {
     parts.push(el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']));
     parts.push(
       el('span', {}, [
         el('span', { class: 'visually-hidden' }, ['Duration ']),
-        formatIncidentDuration(incident.startedAt, incident.resolvedAt),
+        state === 'active' ? `${duration} so far` : duration,
       ]),
     );
   }

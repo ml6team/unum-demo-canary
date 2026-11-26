@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
-  durationSoFar,
   affectedServiceNames,
+  durationSoFar,
   groupByDay,
   historyStart,
   incidentState,

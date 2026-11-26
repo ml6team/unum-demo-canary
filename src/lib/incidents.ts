@@ -1,3 +1,4 @@
+import { formatIncidentDuration } from './format';
 import { addUtcDays, startOfUtcDay, utcDayKey } from './time';
 import type { Incident, IncidentUpdate, Service } from './types';
 
@@ -11,6 +12,12 @@ export function incidentState(incident: Incident, now: Date): IncidentState {
     return 'active';
   }
   return 'resolved';
+}
+
+/** How long an active incident has lasted up to `now`, formatted; null when it is not active. */
+export function durationSoFar(incident: Incident, now: Date): string | null {
+  if (incidentState(incident, now) !== 'active') return null;
+  return formatIncidentDuration(incident.startedAt, now.toISOString());
 }
 
 function newestFirst(a: Incident, b: Incident): number {
