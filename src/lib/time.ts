@@ -24,3 +24,8 @@ export function addUtcDays(instant: Instant, days: number): Date {
 export function durationMs(start: Instant, end: Instant): number {
   return toDate(end).getTime() - toDate(start).getTime();
 }
+
+/** The number of UTC day boundaries between two instants; negative when `to` is before `from`. */
+export function utcDaysBetween(from: Instant, to: Instant): number {
+  return Math.round(durationMs(startOfUtcDay(from), startOfUtcDay(to)) / DAY_MS);
+}
