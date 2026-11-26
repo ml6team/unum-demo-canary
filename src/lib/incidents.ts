@@ -65,3 +65,9 @@ export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
 export function affectedServiceNames(incident: Incident, services: Service[]): string[] {
   return services.filter((s) => incident.affectedServiceIds.includes(s.id)).map((s) => s.name);
 }
+
+/** "1 update" or "<n> updates", the number of entries in the incident's timeline. */
+export function updateCountLabel(incident: Incident): string {
+  const n = incident.updates.length;
+  return `${n} ${n === 1 ? 'update' : 'updates'}`;
+}

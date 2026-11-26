@@ -8,6 +8,7 @@ import {
   incidentState,
   pastIncidents,
   upcomingMaintenance,
+  updateCountLabel,
   updatesNewestFirst,
 } from './lib/incidents';
 import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
@@ -133,7 +134,11 @@ function affects(incident: Incident): HTMLElement {
   ]);
 }
 
-function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
+function incidentDetails(
+  incident: Incident,
+  open = false,
+  showUpdateCount = false,
+): HTMLDetailsElement {
   const details = el('details', { class: `incident tone-${toneOf(incident)}` }, [
     el('summary', { class: 'incident-summary' }, [
       el('span', { class: 'incident-heading' }, [
@@ -142,6 +147,9 @@ function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
       ]),
       incidentMeta(incident),
       affects(incident),
+      ...(showUpdateCount
+        ? [el('p', { class: 'incident-meta' }, [updateCountLabel(incident)])]
+        : []),
       icon('chevron', 'chevron'),
     ]),
     timeline(incident),
@@ -202,7 +210,7 @@ function renderHistory(): void {
         el(
           'div',
           { class: 'day-incidents' },
-          group.incidents.map((i) => incidentDetails(i)),
+          group.incidents.map((i) => incidentDetails(i, false, true)),
         ),
       ]),
     ),
