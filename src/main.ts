@@ -127,7 +127,7 @@ function incidentMeta(incident: Incident): HTMLElement {
 }
 
 function affects(incident: Incident): HTMLElement {
-  return el('p', { class: 'incident-affects' }, [affectsLabel(incident, services)]);
+  return el('p', { class: 'incident-affects' }, [affectsLabel(incident, services.slice(1))]);
 }
 
 function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
