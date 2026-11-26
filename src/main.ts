@@ -10,7 +10,7 @@ import {
   upcomingMaintenance,
   updatesNewestFirst,
 } from './lib/incidents';
-import { overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
+import { operationalSummary, overallStatus, STATUS_LABEL, UPDATE_LABEL } from './lib/status';
 import type { Incident, Service, ServiceStatus } from './lib/types';
 
 type Child = Node | string;
@@ -213,6 +213,7 @@ renderOverall();
 renderActive();
 renderMaintenance();
 byId('services').replaceChildren(...services.map(serviceRow));
+byId('services-summary').textContent = operationalSummary(services);
 byId('updated').replaceChildren(
   'Updated ',
   time(NOW.toISOString(), formatDateTime(NOW.toISOString())),

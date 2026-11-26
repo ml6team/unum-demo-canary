@@ -49,6 +49,12 @@ export function overallStatus(services: Service[]): OverallStatus {
   };
 }
 
+/** "<n> of <total> operational" for the services list heading. */
+export function operationalSummary(services: Service[]): string {
+  const operational = services.filter((s) => s.status === 'operational').length;
+  return `${operational} of ${services.length} operational`;
+}
+
 export const UPDATE_LABEL: Record<IncidentUpdateStatus, string> = {
   investigating: 'Investigating',
   identified: 'Identified',
