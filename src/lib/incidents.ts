@@ -20,6 +20,16 @@ export function durationSoFar(incident: Incident, now: Date): string | null {
   return formatIncidentDuration(incident.startedAt, now.toISOString());
 }
 
+/** The duration text of an incident's meta line: "2h 35m so far" when active, "1h 30m" when resolved, null otherwise. */
+export function durationLabel(incident: Incident, now: Date): string | null {
+  const state = incidentState(incident, now);
+  if (state === 'active') return `${durationSoFar(incident, now)} so far`;
+  if (state === 'resolved' && incident.resolvedAt !== null) {
+    return formatIncidentDuration(incident.startedAt, incident.resolvedAt);
+  }
+  return null;
+}
+
 function newestFirst(a: Incident, b: Incident): number {
   return Date.parse(b.startedAt) - Date.parse(a.startedAt);
 }

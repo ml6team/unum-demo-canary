@@ -1,12 +1,11 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import { formatDateTime, formatDay, formatRange } from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
-  durationSoFar,
+  durationLabel,
   groupByDay,
-  incidentState,
   pastIncidents,
   upcomingMaintenance,
   updatesNewestFirst,
@@ -115,21 +114,10 @@ function incidentMeta(incident: Incident): HTMLElement {
   const parts: Child[] = [
     time(incident.startedAt, formatRange(incident.startedAt, incident.resolvedAt)),
   ];
-  const state = incidentState(incident, NOW);
-  const duration =
-    state === 'active'
-      ? durationSoFar(incident, NOW)
-      : incident.resolvedAt !== null && state === 'resolved'
-        ? formatIncidentDuration(incident.startedAt, incident.resolvedAt)
-        : null;
+  const duration = durationLabel(incident, NOW);
   if (duration !== null) {
     parts.push(el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']));
-    parts.push(
-      el('span', {}, [
-        el('span', { class: 'visually-hidden' }, ['Duration ']),
-        state === 'active' ? `${duration} so far` : duration,
-      ]),
-    );
+    parts.push(el('span', {}, [el('span', { class: 'visually-hidden' }, ['Duration ']), duration]));
   }
   return el('p', { class: 'incident-meta' }, parts);
 }
