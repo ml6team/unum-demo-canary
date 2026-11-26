@@ -65,3 +65,9 @@ export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
 export function affectedServiceNames(incident: Incident, services: Service[]): string[] {
   return services.filter((s) => incident.affectedServiceIds.includes(s.id)).map((s) => s.name);
 }
+
+/** The "Affects <n> service(s): <names>" text of an incident. */
+export function affectsLabel(incident: Incident, services: Service[]): string {
+  const names = affectedServiceNames(incident, services);
+  return `Affects ${names.length} ${names.length === 1 ? 'service' : 'services'}: ${names.join(', ')}`;
+}

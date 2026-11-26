@@ -3,7 +3,7 @@ import { incidents, NOW, services } from './data';
 import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
 import {
   activeIncidents,
-  affectedServiceNames,
+  affectsLabel,
   groupByDay,
   incidentState,
   pastIncidents,
@@ -127,10 +127,7 @@ function incidentMeta(incident: Incident): HTMLElement {
 }
 
 function affects(incident: Incident): HTMLElement {
-  return el('p', { class: 'incident-affects' }, [
-    el('span', { class: 'muted' }, ['Affects ']),
-    affectedServiceNames(incident, services).join(', '),
-  ]);
+  return el('p', { class: 'incident-affects' }, [affectsLabel(incident, services)]);
 }
 
 function incidentDetails(incident: Incident, open = false): HTMLDetailsElement {
