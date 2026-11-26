@@ -6,7 +6,7 @@ Data comes from the JSON fixtures in `src/data/`. The page's current time is fix
 
 ## Run
 
-Requires Node 22 or later.
+Requires Node 22 or 24.
 
 ```sh
 npm ci
