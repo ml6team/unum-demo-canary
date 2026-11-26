@@ -65,3 +65,8 @@ export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
 export function affectedServiceNames(incident: Incident, services: Service[]): string[] {
   return services.filter((s) => incident.affectedServiceIds.includes(s.id)).map((s) => s.name);
 }
+
+/** The line under the "Past incidents" heading, with the number of incidents listed. */
+export function historySummary(count: number, days = HISTORY_DAYS): string {
+  return `${count} ${count === 1 ? 'incident' : 'incidents'} in the last ${days} days, times in UTC`;
+}

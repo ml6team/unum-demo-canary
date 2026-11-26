@@ -5,6 +5,7 @@ import {
   activeIncidents,
   affectedServiceNames,
   groupByDay,
+  historySummary,
   incidentState,
   pastIncidents,
   upcomingMaintenance,
@@ -186,7 +187,9 @@ function renderMaintenance(): void {
 }
 
 function renderHistory(): void {
-  const groups = groupByDay(pastIncidents(incidents, NOW));
+  const past = pastIncidents(incidents, NOW);
+  const groups = groupByDay(past);
+  byId('history-summary').replaceChildren(historySummary(past.length));
   if (groups.length === 0) {
     byId('days').replaceChildren(
       el('p', { class: 'empty' }, ['No incidents reported in the last 90 days.']),

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { NOW as FIXTURE_NOW, incidents as fixtureIncidents } from '../data';
 import {
   activeIncidents,
   affectedServiceNames,
@@ -10,7 +11,6 @@ import {
   upcomingMaintenance,
   updatesNewestFirst,
 } from './incidents';
-import { incidents as fixtureIncidents, NOW as FIXTURE_NOW } from '../data';
 import type { Incident } from './types';
 
 const NOW = new Date('2026-10-01T12:00:00Z');
