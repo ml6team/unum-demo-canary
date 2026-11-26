@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   activeIncidents,
   affectedServiceNames,
+  durationLabel,
   durationSoFar,
   groupByDay,
   historyStart,
@@ -176,5 +177,21 @@ describe('durationSoFar', () => {
   it('is null for an upcoming window', () => {
     const upcoming = incident('u', '2026-10-02T09:00:00Z', '2026-10-02T10:00:00Z');
     expect(durationSoFar(upcoming, NOW)).toBeNull();
+  });
+});
+
+describe('durationLabel', () => {
+  it('adds "so far" for an active incident', () => {
+    expect(durationLabel(incident('a', '2026-10-01T09:25:00Z', null), NOW)).toBe('2h 35m so far');
+  });
+
+  it('is the plain duration for a resolved incident', () => {
+    const resolved = incident('r', '2026-10-01T09:00:00Z', '2026-10-01T10:30:00Z');
+    expect(durationLabel(resolved, NOW)).toBe('1h 30m');
+  });
+
+  it('is null for an upcoming window', () => {
+    const upcoming = incident('u', '2026-10-02T09:00:00Z', '2026-10-02T10:00:00Z');
+    expect(durationLabel(upcoming, NOW)).toBeNull();
   });
 });
