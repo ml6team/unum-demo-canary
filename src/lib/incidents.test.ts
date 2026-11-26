@@ -7,6 +7,7 @@ import {
   incidentState,
   pastIncidents,
   upcomingMaintenance,
+  updateCountLabel,
   updatesNewestFirst,
 } from './incidents';
 import type { Incident } from './types';
@@ -153,5 +154,40 @@ describe('affectedServiceNames', () => {
       affectedServiceIds: ['web', 'gone', 'api'],
     });
     expect(affectedServiceNames(subject, services)).toEqual(['API', 'Web app']);
+  });
+});
+
+describe('updateCountLabel', () => {
+  const update = (at: string) => ({ at, status: 'investigating' as const, body: 'x' });
+
+  it('AC1: reads "1 update" with one update', () => {
+    const i = incident('a', '2026-09-30T01:00:00Z', '2026-09-30T02:00:00Z', {
+      updates: [update('2026-09-30T01:00:00Z')],
+    });
+    expect(updateCountLabel(i)).toBe('1 update');
+  });
+
+  it('AC1: reads "<n> updates" with several updates', () => {
+    const i = incident('a', '2026-09-30T01:00:00Z', '2026-09-30T02:00:00Z', {
+      updates: [
+        update('2026-09-30T01:00:00Z'),
+        update('2026-09-30T01:30:00Z'),
+        update('2026-09-30T02:00:00Z'),
+      ],
+    });
+    expect(updateCountLabel(i)).toBe('3 updates');
+  });
+
+  it('AC1: reads "0 updates" with no update', () => {
+    expect(updateCountLabel(incident('a', '2026-09-30T01:00:00Z', '2026-09-30T02:00:00Z'))).toBe(
+      '0 updates',
+    );
+  });
+
+  it('AC2: the count matches the entries of the timeline', () => {
+    const i = incident('a', '2026-09-30T01:00:00Z', '2026-09-30T02:00:00Z', {
+      updates: [update('2026-09-30T01:00:00Z'), update('2026-09-30T02:00:00Z')],
+    });
+    expect(updateCountLabel(i)).toBe(`${updatesNewestFirst(i).length} updates`);
   });
 });
