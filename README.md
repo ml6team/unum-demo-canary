@@ -2,7 +2,7 @@
 
 Public status page for Northwind. It shows the current status of each service, upcoming scheduled maintenance and the incident history of the last 90 days, with every update for each incident.
 
-Data comes from the JSON fixtures in `src/data/`. The page's current time is fixed at `NOW` in `src/data/index.ts` (Oct 1, 2026, 12:00 UTC), so it reads the same on any date.
+Data comes from the JSON fixtures in `src/data/`. The page's current time is fixed at `NOW` in `src/data/index.ts` (Oct 1, 2026, 12:00 UTC), so it reads the same on any date. Every date and time on the page is shown in UTC.
 
 ## Run
 
