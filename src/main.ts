@@ -4,6 +4,7 @@ import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from '
 import {
   activeIncidents,
   affectedServiceNames,
+  dayCountLabel,
   groupByDay,
   incidentState,
   pastIncidents,
@@ -198,6 +199,7 @@ function renderHistory(): void {
       el('section', { class: 'day', 'aria-labelledby': `day-${group.day}` }, [
         el('h3', { class: 'day-heading', id: `day-${group.day}` }, [
           time(group.day, formatDay(group.day)),
+          ` · ${dayCountLabel(group.incidents.length)}`,
         ]),
         el(
           'div',

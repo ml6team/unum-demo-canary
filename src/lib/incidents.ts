@@ -57,6 +57,11 @@ export function groupByDay(incidents: Incident[]): DayGroup[] {
   return [...groups].map(([day, list]) => ({ day, incidents: list }));
 }
 
+/** "1 incident" or "<n> incidents": the number of entries a day lists. */
+export function dayCountLabel(count: number): string {
+  return `${count} ${count === 1 ? 'incident' : 'incidents'}`;
+}
+
 export function updatesNewestFirst(incident: Incident): IncidentUpdate[] {
   return [...incident.updates].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 }
