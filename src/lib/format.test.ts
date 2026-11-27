@@ -4,6 +4,7 @@ import {
   formatDay,
   formatDuration,
   formatIncidentDuration,
+  formatPlannedDuration,
   formatRange,
   formatTime,
 } from './format';
@@ -69,5 +70,24 @@ describe('formatDuration', () => {
 describe('formatIncidentDuration', () => {
   it('measures between two instants', () => {
     expect(formatIncidentDuration('2026-08-19T13:02:00Z', '2026-08-19T16:08:00Z')).toBe('3h 6m');
+  });
+});
+
+describe('formatPlannedDuration', () => {
+  it('AC1: measures a planned window', () => {
+    expect(formatPlannedDuration('2026-10-04T01:00:00Z', '2026-10-04T03:00:00Z')).toBe('2h');
+  });
+
+  it('AC2: uses the existing duration format', () => {
+    expect(formatPlannedDuration('2026-10-04T01:00:00Z', '2026-10-04T01:45:00Z')).toBe('45m');
+    expect(formatPlannedDuration('2026-10-04T01:00:00Z', '2026-10-04T03:35:00Z')).toBe('2h 35m');
+  });
+
+  it('AC2: never shows less than 1m', () => {
+    expect(formatPlannedDuration('2026-10-04T01:00:00Z', '2026-10-04T01:00:10Z')).toBe('1m');
+  });
+
+  it('AC3: returns null without a planned end', () => {
+    expect(formatPlannedDuration('2026-10-04T01:00:00Z', null)).toBeNull();
   });
 });
