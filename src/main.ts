@@ -1,6 +1,12 @@
 import './style.css';
 import { incidents, NOW, services } from './data';
-import { formatDateTime, formatDay, formatIncidentDuration, formatRange } from './lib/format';
+import {
+  formatDateTime,
+  formatDay,
+  formatIncidentDuration,
+  formatPlannedDuration,
+  formatRange,
+} from './lib/format';
 import {
   activeIncidents,
   affectedServiceNames,
@@ -110,18 +116,19 @@ function timeline(incident: Incident): HTMLOListElement {
   );
 }
 
+function durationParts(length: string): Child[] {
+  return [
+    el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']),
+    el('span', {}, [el('span', { class: 'visually-hidden' }, ['Duration ']), length]),
+  ];
+}
+
 function incidentMeta(incident: Incident): HTMLElement {
   const parts: Child[] = [
     time(incident.startedAt, formatRange(incident.startedAt, incident.resolvedAt)),
   ];
   if (incident.resolvedAt !== null && incidentState(incident, NOW) === 'resolved') {
-    parts.push(el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']));
-    parts.push(
-      el('span', {}, [
-        el('span', { class: 'visually-hidden' }, ['Duration ']),
-        formatIncidentDuration(incident.startedAt, incident.resolvedAt),
-      ]),
-    );
+    parts.push(...durationParts(formatIncidentDuration(incident.startedAt, incident.resolvedAt)));
   }
   return el('p', { class: 'incident-meta' }, parts);
 }
@@ -161,6 +168,15 @@ function renderActive(): void {
   );
 }
 
+function maintenanceMeta(m: Incident): HTMLElement {
+  const planned = formatPlannedDuration(m.startedAt, m.resolvedAt);
+  return el('p', { class: 'incident-meta' }, [
+    el('span', { class: 'visually-hidden' }, ['Scheduled for ']),
+    time(m.startedAt, formatRange(m.startedAt, m.resolvedAt)),
+    ...(planned === null ? [] : durationParts(planned)),
+  ]);
+}
+
 function renderMaintenance(): void {
   const upcoming = upcomingMaintenance(incidents, NOW);
   if (upcoming.length === 0) return;
@@ -172,10 +188,7 @@ function renderMaintenance(): void {
           icon('maintenance', 'maintenance-icon'),
           el('div', { class: 'maintenance-text' }, [
             el('h3', { class: 'maintenance-title' }, [m.title]),
-            el('p', { class: 'incident-meta' }, [
-              el('span', { class: 'visually-hidden' }, ['Scheduled for ']),
-              time(m.startedAt, formatRange(m.startedAt, m.resolvedAt)),
-            ]),
+            maintenanceMeta(m),
             affects(m),
             el('p', { class: 'maintenance-body' }, [m.updates.at(-1)?.body ?? '']),
           ]),

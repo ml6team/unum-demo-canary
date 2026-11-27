@@ -49,3 +49,8 @@ export function formatDuration(ms: number): string {
 export function formatIncidentDuration(start: string, end: string): string {
   return formatDuration(durationMs(start, end));
 }
+
+/** Planned length of a window, or null when it has no planned end. */
+export function formatPlannedDuration(start: string, end: string | null): string | null {
+  return end === null ? null : formatIncidentDuration(start, end);
+}
