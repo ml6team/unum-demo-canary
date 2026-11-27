@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { incidents, NOW, services } from '../data';
-import { activeIncidents, historyStart, incidentState } from './incidents';
+import { formatPlannedDuration } from './format';
+import { activeIncidents, historyStart, incidentState, upcomingMaintenance } from './incidents';
 import { STATUS_LABEL } from './status';
 import { utcDayKey } from './time';
 
@@ -69,5 +70,12 @@ describe('fixtures', () => {
     expect(past.some((i) => i.kind === 'maintenance')).toBe(true);
     expect(past.some((i) => i.affectedServiceIds.length > 1)).toBe(true);
     expect(incidents.some((i) => incidentState(i, NOW) === 'upcoming')).toBe(true);
+  });
+
+  it('AC6: every upcoming maintenance with a planned end has a planned length', () => {
+    const upcoming = upcomingMaintenance(incidents, NOW).filter((m) => m.resolvedAt !== null);
+    expect(upcoming.length).toBeGreaterThan(0);
+    for (const m of upcoming)
+      expect(formatPlannedDuration(m.startedAt, m.resolvedAt)).not.toBeNull();
   });
 });
