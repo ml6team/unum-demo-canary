@@ -116,18 +116,19 @@ function timeline(incident: Incident): HTMLOListElement {
   );
 }
 
+function durationPart(duration: string): Child[] {
+  return [
+    el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']),
+    el('span', {}, [el('span', { class: 'visually-hidden' }, ['Duration ']), duration]),
+  ];
+}
+
 function incidentMeta(incident: Incident): HTMLElement {
   const parts: Child[] = [
     time(incident.startedAt, formatRange(incident.startedAt, incident.resolvedAt)),
   ];
   if (incident.resolvedAt !== null && incidentState(incident, NOW) === 'resolved') {
-    parts.push(el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']));
-    parts.push(
-      el('span', {}, [
-        el('span', { class: 'visually-hidden' }, ['Duration ']),
-        formatIncidentDuration(incident.startedAt, incident.resolvedAt),
-      ]),
-    );
+    parts.push(...durationPart(formatIncidentDuration(incident.startedAt, incident.resolvedAt)));
   }
   return el('p', { class: 'incident-meta' }, parts);
 }
@@ -173,10 +174,7 @@ function maintenanceMeta(m: Incident): HTMLElement {
     time(m.startedAt, formatRange(m.startedAt, m.resolvedAt)),
   ];
   const planned = formatPlannedDuration(m.startedAt, m.resolvedAt);
-  if (planned !== null) {
-    parts.push(el('span', { class: 'dot', 'aria-hidden': 'true' }, ['·']));
-    parts.push(el('span', {}, [el('span', { class: 'visually-hidden' }, ['Duration ']), planned]));
-  }
+  if (planned !== null) parts.push(...durationPart(planned));
   return el('p', { class: 'incident-meta' }, parts);
 }
 
